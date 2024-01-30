@@ -2,4 +2,4 @@
 
 # WIP
 
-tensorboard --logdir=./tensorflow/
+expliquer comment l'application est structurée et ou trouver plus d'informations
