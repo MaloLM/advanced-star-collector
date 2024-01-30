@@ -1,5 +1,4 @@
 
-import math
 from utils.game_states import ON_EXIT_DOOR, ONTO_SURFACE, OUT_OF_BOUNDS, STAR_COLLECTED
 
 

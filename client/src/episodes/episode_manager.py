@@ -1,12 +1,13 @@
 import logging
 import os
-# from data_management.tensorflow_logging import TensorFlowLogger
+from api.requests import end_training, get_epsilon
 from utils.timer import Timer
 from typing import Any, Callable
-from episode import Episode
+from .episode import Episode
 from utils.logging import setup_loggers
 from utils.game_states import ON_EXIT_DOOR, OUT_OF_BOUNDS, RANDOM, TESTING, TRAINING
-from config.settings import MODELS_PATH, NB_OF_EPISODES, TENSORFLOW_LOG_PATH
+from utils.settings import MODELS_PATH, NB_OF_EPISODES
+
 
 setup_loggers()
 app_logger = logging.getLogger('app_logger')
@@ -19,7 +20,6 @@ class EpisodeManager:
         self.nb_episodes = nb_eps
         self.current_running_ep_idx = -1
         self.current_episode: Episode = None
-        self.agent = DQNAgent()
 
         # --- logging
         self.timer = Timer()
@@ -37,18 +37,17 @@ class EpisodeManager:
     def set_callback(self, callback: Callable) -> None:
         self.interface_update_callback: Callable = callback
 
-    def log_episode_to_tensorboard(self) -> None:
-        dqn: DQNAgent = self.agent
+    # def log_episode_to_tensorboard(self) -> None:
 
-        metrics = {
-            "Cumulative OOBounds/ExitDoor": (self.cummulative_out_of_bouds + 1) / (self.cummulative_exit_doors + 1),
-            "Episode number of step": self.current_episode.step_index,
-            "Loss": dqn.current_loss,
-            "Gradient norm": dqn.current_grad_norm,
-            "Total episode reward": self.current_episode.total_reward,
-        }
+    #     metrics = {
+    #         "Cumulative OOBounds/ExitDoor": (self.cummulative_out_of_bouds + 1) / (self.cummulative_exit_doors + 1),
+    #         "Episode number of step": self.current_episode.step_index,
+    #         "Loss": dqn.current_loss,
+    #         "Gradient norm": dqn.current_grad_norm,
+    #         "Total episode reward": self.current_episode.total_reward,
+    #     }
 
-        self.tensorflow_logger.log(self.current_running_ep_idx, metrics)
+    #     self.tensorflow_logger.log(self.current_running_ep_idx, metrics)
 
     def train_model(self, model_name: str) -> None:
 
@@ -60,15 +59,15 @@ class EpisodeManager:
         for idx in range(1, self.nb_episodes + 1):
             self.current_running_ep_idx = idx
             self.current_episode = Episode(
-                idx, self.agent, self.interface_update_callback)
+                idx, self.interface_update_callback)
             self.current_episode.process_game(mode=TRAINING)
             self.cummulative_exit_doors += 1 if self.current_episode.game_state.current_state == ON_EXIT_DOOR else 0
             self.cummulative_out_of_bouds += 1 if self.current_episode.game_state.current_state == OUT_OF_BOUNDS else 0
 
-            self.log_episode_to_tensorboard()
+            # self.log_episode_to_tensorboard()
 
         self.timer.end()
-        self.agent.save_model(model_name)
+        end_training(model_name)
         app_logger.info(
             f'TRAINING: End of the training, duration: {self.timer.get_formatted_duration}')
 
@@ -88,7 +87,7 @@ class EpisodeManager:
             self.cummulative_exit_doors += 1 if self.current_episode.game_state.current_state == ON_EXIT_DOOR else 0
             self.cummulative_out_of_bouds += 1 if self.current_episode.game_state.current_state == OUT_OF_BOUNDS else 0
 
-            self.log_episode_to_tensorboard()
+            # self.log_episode_to_tensorboard()
 
         self.timer.end()
         app_logger.info(
@@ -103,12 +102,12 @@ class EpisodeManager:
         for idx in range(1, self.nb_episodes + 1):
             self.current_running_ep_idx = idx
             self.current_episode = Episode(
-                idx, self.agent, self.interface_update_callback)
+                idx, self.interface_update_callback)
             self.current_episode.process_game(mode=RANDOM)
             self.cummulative_exit_doors += 1 if self.current_episode.game_state.current_state == ON_EXIT_DOOR else 0
             self.cummulative_out_of_bouds += 1 if self.current_episode.game_state.current_state == OUT_OF_BOUNDS else 0
 
-            self.log_episode_to_tensorboard()
+            # self.log_episode_to_tensorboard()
 
         self.timer.end()
         app_logger.info(
@@ -125,7 +124,7 @@ class EpisodeManager:
             "Mode": self.mode,
             "Duration": self.timer.get_formatted_duration(),
             "Episode": f'{self.current_running_ep_idx + 1}/{self.nb_episodes}',
-            "Epsilon":  round(self.agent.epsilon, 3)
+            "Epsilon":  round(get_epsilon(), 3)
         }
 
         episode_details = self.current_episode.get_info()

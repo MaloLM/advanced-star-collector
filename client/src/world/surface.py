@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-import matplotlib.patches as patches
 import random
 import math
 from utils.colors import GRAY

@@ -1,8 +1,6 @@
-from random import randrange
-import matplotlib.pyplot as plt
-from rl_module.world.head import Head
-from rl_module.world.surface import Disk
-from utils.colors import BLUE, RED
+from .head import Head
+from .surface import Disk
+from utils.colors import BLUE
 
 
 class Agent:

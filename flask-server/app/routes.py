@@ -1,13 +1,19 @@
-from flask import Flask, request, jsonify
+import sys
+import logging
+from flask import request, jsonify
 from agent.dqn_agent import DQNAgent
 from threading import Thread
 import queue
+from utils.logging import setup_loggers
 
-agent = DQNAgent()
-update_queue = queue.Queue()
+setup_loggers()
+app_logger = logging.getLogger('app_logger')
 
 
 def configure_routes(app):
+
+    agent = DQNAgent()
+    update_queue = queue.Queue()
 
     def update_model_from_queue():
         while True:
@@ -24,6 +30,14 @@ def configure_routes(app):
     def hello_world():
         data = {"state": "test", "mode": 2}
         return data
+
+    @app.route('/get_epsilon', methods=['GET'])
+    def get_epsilon():
+        epsilon = agent.epsilon
+
+        print(f'EPSI {epsilon}', file=sys.stdout)
+
+        return jsonify({"epsilon": epsilon}), 200
 
     @app.route('/end_training', methods=['POST'])
     def end_training():

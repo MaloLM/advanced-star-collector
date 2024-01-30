@@ -5,6 +5,29 @@ import numpy as np
 
 
 @staticmethod
+def distribute_episodes(num_episodes, num_processes):
+    """
+    Distributes the number of episodes among processes.
+
+    Args:
+    num_episodes (int): The total number of episodes to run.
+    num_processes (int): The number of processes.
+
+    Returns:
+    list: A list containing the number of episodes each process will execute.
+    """
+    base_count = num_episodes // num_processes
+    remainder = num_episodes % num_processes
+
+    episodes_per_process = [base_count for _ in range(num_processes)]
+
+    for i in range(remainder):
+        episodes_per_process[i] += 1
+
+    return episodes_per_process
+
+
+@staticmethod
 def generate_datetime_string():
     """
     Generates a string representing the current date and time.

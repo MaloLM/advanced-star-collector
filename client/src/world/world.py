@@ -1,10 +1,10 @@
 import math
 from utils.common import distance
 from utils.colors import PALE_GRAY
-from rl_module.world.head import Head
-from rl_module.world.agent import Agent
-from rl_module.world.surface import Surface
-from rl_module.world.collectible import Collectible, ExitDoor
+from .head import Head
+from .agent import Agent
+from .surface import Surface
+from .collectible import Collectible, ExitDoor
 from utils.game_states import ON_EXIT_DOOR, ONTO_SURFACE, OUT_OF_BOUNDS, STAR_COLLECTED
 
 

@@ -36,3 +36,12 @@ def end_training(filename):
     response = requests.post(url, json=data)
     if response.status_code != 200:
         raise Exception("Failed to end training on server")
+
+
+def get_epsilon():
+    url = f"{API_URL}/get_epsilon"
+    response = requests.get(url)
+    if response.status_code == 200:
+        return response.json()["epsilon"]
+    else:
+        raise Exception("Failed to get epsilon from server")

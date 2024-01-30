@@ -1,14 +1,14 @@
-import time
 import logging
 from typing import Callable
-from data_management.tensorflow_logging import TensorFlowLogger
+from api.requests import get_action, update_model
+from utils.replay_buffer import ReplayBuffer
 from utils.timer import Timer
-from rl_module.world.world import World
-from config.settings import MAX_STEP_PER_EP
-from rl_module.game_state import GameState
-from rl_module.reward import get_step_reward
-from rl_module.agent.dqn_agent import DQNAgent
-from data_management.data_recorder import create_gif
+from world.world import World
+
+from .game_state import GameState
+from .reward import get_step_reward
+from utils.settings import MAX_STEP_PER_EP
+from utils.data_recorder import create_gif
 
 from utils.common import normalize_group, one_hot_encode
 from utils.game_states import OUT_OF_BOUNDS, ON_EXIT_DOOR, TESTING, TRAINING
@@ -21,10 +21,10 @@ class Episode:
     Equivalent to a game
     """
 
-    def __init__(self, ep_number: int, dqn_agent: DQNAgent, interface_update_callback: Callable):
+    def __init__(self, ep_number: int, interface_update_callback: Callable):
         self.ep_number: int = ep_number
         self.world = World()
-        self.dqn_agent: DQNAgent = dqn_agent
+        self.buffer = ReplayBuffer()
         self.game_state = GameState(self.world)
         self.step_index = 0
         self.total_reward = 0
@@ -57,14 +57,7 @@ class Episode:
 
             state_to_choose_an_action = self.prepare_state_for_model(state)
 
-            if mode == TESTING:
-                action = self.dqn_agent.choose_action_with_model(
-                    state_to_choose_an_action)
-            elif mode == TRAINING:
-                action = self.dqn_agent.choose_action_for_training(
-                    state_to_choose_an_action)
-            else:
-                action = self.dqn_agent.choose_random_action()
+            action = get_action(state_to_choose_an_action, mode)
 
             new_state, reward, done = self.step(action)
             self.step_index += 1
@@ -73,7 +66,7 @@ class Episode:
 
                 next_state = self.prepare_state_for_model(new_state)
 
-                self.save_to_dqn_buffer(
+                self.save_to_buffer(
                     state_to_choose_an_action, action, reward, next_state, done)
 
             state = new_state
@@ -82,14 +75,14 @@ class Episode:
             self.log_ml_metrics()
 
         if mode == TRAINING:
-            self.dqn_agent.check_buffer_to_update_policy()
+            update_model(self.buffer)
 
         self.total_reward_history.append(self.total_reward)
         self.total_collected_history.append(
             self.game_state.nb_collected)
 
-        if mode == TRAINING:
-            self.dqn_agent.decay_exploration_rate()
+        # if mode == TRAINING:
+        #     self.dqn_agent.decay_exploration_rate()
         self.timer.end()
 
     def prepare_state_for_model(self, state: list):
@@ -107,8 +100,8 @@ class Episode:
                           vision, sensing_state, sensing_distances,]
         return prapared_state
 
-    def save_to_dqn_buffer(self, state_to_choose_an_action, action, reward, next_state, done):
-        self.dqn_agent.buffer.add(
+    def save_to_buffer(self, state_to_choose_an_action, action, reward, next_state, done):
+        self.buffer.add(
             (state_to_choose_an_action, action, reward, next_state, done), self.total_reward)
 
     def update_game_state_after_action(self, action: int) -> tuple[list, list]:
@@ -254,7 +247,6 @@ class Episode:
 
     def get_info(self) -> dict[str, int]:
         info = {
-            "Buffer length": len(self.dqn_agent.buffer),
             "Frame": self.step_index,
         }
         return info

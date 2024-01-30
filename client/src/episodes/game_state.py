@@ -1,4 +1,4 @@
-from rl_module.world.world import World
+from world.world import World
 from utils.game_states import ONTO_SURFACE
 
 
