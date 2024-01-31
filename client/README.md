@@ -2,6 +2,6 @@
 
 # WIP
 
-tensorboard --logdir=./tensorflow/
+tensorboard --logdir=./data/tensorflow/
 
 expliquer les clients

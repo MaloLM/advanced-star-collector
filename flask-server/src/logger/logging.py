@@ -16,7 +16,6 @@ if not os.path.exists(log_directory):
     os.makedirs(log_directory)
 
 app_log_path = os.path.join(log_directory, 'application.log')
-ml_log_path = os.path.join(log_directory, 'ml_metrics.log')
 
 
 def setup_loggers():
@@ -30,14 +29,6 @@ def setup_loggers():
         app_log_handler.setFormatter(log_formatter)
         app_logger.setLevel(logging.INFO)
         app_logger.addHandler(app_log_handler)
-
-    ml_logger = logging.getLogger('ml_logger')
-    if not ml_logger.hasHandlers():
-        ml_log_handler = RotatingFileHandler(
-            ml_log_path, maxBytes=1e6, backupCount=5)
-        ml_log_handler.setFormatter(log_formatter)
-        ml_logger.setLevel(logging.INFO)
-        ml_logger.addHandler(ml_log_handler)
 
 
 setup_loggers()

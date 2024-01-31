@@ -8,12 +8,12 @@ from world.world import World
 from .game_state import GameState
 from .reward import get_step_reward
 from settings import MAX_STEP_PER_EP
-from utils.data_recorder import create_gif
+from logger.data_recorder import create_gif
 
 from utils.common import normalize_group, one_hot_encode
 from utils.game_states import OUT_OF_BOUNDS, ON_EXIT_DOOR, TESTING, TRAINING
 
-ml_logger = logging.getLogger('ml_logger')
+app_logger = logging.getLogger('app_logger')
 
 
 class Episode:
@@ -38,8 +38,8 @@ class Episode:
         self.interface_update_callback = interface_update_callback
 
     def __del__(self):
-        ml_logger.info(
-            f'episode: {self.ep_number}, duration: {self.timer.get_formatted_duration} ')
+        app_logger.info(
+            f'episode: {self.ep_number}, duration: {self.timer.get_formatted_duration()}')
         # create_gif()
 
     def process_game(self, mode: str = TRAINING) -> None:
@@ -52,7 +52,7 @@ class Episode:
 
         while not done:
 
-            if self.step_index >= 500:
+            if self.step_index >= 200:
                 done = True
 
             state_to_choose_an_action = self.prepare_state_for_model(state)
@@ -81,8 +81,6 @@ class Episode:
         self.total_collected_history.append(
             self.game_state.nb_collected)
 
-        # if mode == TRAINING:
-        #     self.dqn_agent.decay_exploration_rate()
         self.timer.end()
 
     def prepare_state_for_model(self, state: list):
@@ -102,7 +100,7 @@ class Episode:
 
     def save_to_buffer(self, state_to_choose_an_action, action, reward, next_state, done):
         self.buffer.add(
-            (state_to_choose_an_action, action, reward, next_state, done), self.total_reward)
+            (state_to_choose_an_action, action, reward, next_state, done), round(self.total_reward, 3))
 
     def update_game_state_after_action(self, action: int) -> tuple[list, list]:
         """
@@ -237,7 +235,7 @@ class Episode:
         return props  # to draw
 
     def log_ml_metrics(self) -> None:
-        ml_logger.info(
+        app_logger.info(
             f'episode: {self.ep_number}, \
                 current agent situation: {self.game_state.current_state}, \
                 current vision: {self.game_state.evaluate_next_states()}, \

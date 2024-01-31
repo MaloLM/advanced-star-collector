@@ -1,3 +1,4 @@
+import json
 import requests
 
 API_URL = "http://127.0.0.1:5000"
@@ -22,17 +23,43 @@ def get_action(state, mode):
         raise Exception("Failed to get action from server")
 
 
+def serialize_experience(experience):
+    state, action, reward, next_state, done = experience[0]
+    total_reward = experience[1]
+    return {
+        "state": state,
+        "action": action,
+        "reward": reward,
+        "next_state": next_state,
+        "done": done,
+        "total_reward": total_reward
+    }
+
+
 def update_model(training_data):
     url = f"{API_URL}/update_model"
-    response = requests.post(url, json=training_data)
+    # preparing data
+    serialized_experiences = []
+
+    for exp in training_data.buffer:
+        serialized_experiences.append(serialize_experience(exp))
+
+    response = requests.post(url, json=serialized_experiences)
     if response.status_code != 200:
         raise Exception("Failed to update model on server")
 
 
-def end_training(filename):
-    url = f"{API_URL}/end_training"
-    data = {"filename": filename}
+def start_training(modelname: str):
+    url = f"{API_URL}/start_training"
+    data = {"modelname": modelname}
     response = requests.post(url, json=data)
+    if response.status_code != 200:
+        raise Exception("Failed to end training on server")
+
+
+def end_training():
+    url = f"{API_URL}/end_training"
+    response = requests.get(url)
     if response.status_code != 200:
         raise Exception("Failed to end training on server")
 

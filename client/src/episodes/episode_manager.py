@@ -3,7 +3,7 @@ from api.requests import end_training, get_epsilon
 from utils.timer import Timer
 from typing import Any, Callable, Optional
 from .episode import Episode
-from utils.logging import setup_loggers
+from logger.logging import setup_loggers
 from utils.game_states import ON_EXIT_DOOR, OUT_OF_BOUNDS, RANDOM, TESTING, TRAINING
 from settings import NB_OF_EPISODES
 
@@ -35,7 +35,7 @@ class EpisodeManager:
     def set_callback(self, callback: Callable) -> None:
         self.interface_update_callback: Callable = callback
 
-    def train_model(self, model_name: str) -> None:
+    def train_model(self) -> None:
 
         app_logger.info('TRAINING: Start of a training')
         self.set_mode(TRAINING)
@@ -50,11 +50,10 @@ class EpisodeManager:
             self.cummulative_out_of_bouds += 1 if self.current_episode.game_state.current_state == OUT_OF_BOUNDS else 0
 
         self.timer.end()
-        end_training(model_name)
         app_logger.info(
-            f'TRAINING: End of the training, duration: {self.timer.get_formatted_duration}')
+            f'TRAINING: End of the training, duration: {self.timer.get_formatted_duration()}')
 
-    def run_model(self, model_name: str) -> None:
+    def run_model(self) -> None:
         app_logger.info('TESTING: Start of inference')
         self.set_mode(TESTING)
         self.timer.start()
@@ -69,7 +68,7 @@ class EpisodeManager:
 
         self.timer.end()
         app_logger.info(
-            f'TESTING: End of inference, duration: {self.timer.get_formatted_duration}')
+            f'TESTING: End of inference, duration: {self.timer.get_formatted_duration()}')
 
     def run_random(self) -> None:
         app_logger.info('RANDOM: Start of random play')
@@ -86,7 +85,7 @@ class EpisodeManager:
 
         self.timer.end()
         app_logger.info(
-            f'RANDOM: End of random play, duration: {self.timer.get_formatted_duration}')
+            f'RANDOM: End of random play, duration: {self.timer.get_formatted_duration()}')
 
     def get_current_state_to_display(self) -> dict[str, dict]:
         current_episode: Episode = self.current_episode
@@ -98,7 +97,7 @@ class EpisodeManager:
         info = {
             "Mode": self.mode,
             "Duration": self.timer.get_formatted_duration(),
-            "Episode": f'{self.current_running_ep_idx + 1}/{self.nb_episodes}',
+            "Episode": f'{self.current_running_ep_idx}/{self.nb_episodes}',
             "Epsilon":  round(get_epsilon(), 3)
         }
 

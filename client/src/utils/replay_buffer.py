@@ -19,6 +19,16 @@ class ReplayBuffer:
         """
         self.buffer = deque(maxlen=buffer_size)
 
+    def iterate(self):
+        """
+        Iterate over the experiences in the buffer.
+
+        Yields:
+            tuple: Each experience in the buffer.
+        """
+        for experience in self.buffer:
+            yield experience
+
     def add(self, experience, total_game_reward: float):
         """
         Add a new experience to the buffer.

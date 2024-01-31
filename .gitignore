@@ -164,8 +164,8 @@ cython_debug/
 .DS_Store
 .vscode
 archi.txt
-/data/models/
-/data/logs/
+*/data/models/
+*/data/logs/
 
-data/tensorflow/*
-!data/tensorflow/keep_me.md
+*/data/tensorflow/*
+!*/data/tensorflow/keep_me.md

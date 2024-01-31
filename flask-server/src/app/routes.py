@@ -1,74 +1,60 @@
-import sys
 import logging
-import queue
-from threading import Thread
-from ..agent.dqn_agent import DQNAgent
-from flask import request, jsonify
-from ..logging.logging import setup_loggers
+from flask import request, jsonify, Flask
+from ..logger.logging import setup_loggers
+from ..agent.agent_manager import DQNAgentManager
+from ..utils.game_states import RANDOM, TESTING, TRAINING
+from ..agent.model_updater_thread import ModelUpdaterThread
+
 
 setup_loggers()
-app_logger = logging.getLogger('app_logger')
+logger = logging.getLogger('app_logger')
 
 
 class RouteConfigurator:
-    def __init__(self, app):
-        self.agent = DQNAgent()
-        self.update_queue = queue.Queue()
-        self.app = app
+    def __init__(self, app: Flask, agent_manager: DQNAgentManager, model_updater: ModelUpdaterThread):
+        self.app: Flask = app
+        self.agent_manager = agent_manager
+        self.thread = model_updater
         self.configure_routes()
-        self.start_model_updater()
-
-    def start_model_updater(self):
-        def update_model_from_queue():
-            while True:
-                if not self.update_queue.empty():
-                    data = self.update_queue.get()
-                    print(data)
-                    self.agent.buffer.add(data)
-                    self.agent.check_buffer_to_update_policy()
-
-        model_updater_thread = Thread(target=update_model_from_queue)
-        model_updater_thread.start()
+        self.thread.check_and_restart_thread()
 
     def configure_routes(self):
-        @self.app.route('/helloworld', methods=['GET'])
-        def hello_world():
-            data = {"state": "test", "mode": 2}
-            return data
-
         @self.app.route('/get_epsilon', methods=['GET'])
         def get_epsilon():
-            epsilon = self.agent.epsilon
-
-            print(f'EPSI {epsilon}', file=sys.stdout)
-
-            return jsonify({"epsilon": epsilon}), 200
+            return jsonify({"epsilon": self.agent_manager.agent.epsilon}), 200
 
         @self.app.route('/start_training', methods=['POST'])
         def start_training():
-            filename = request.json.get('filename')
-            # INSTANCIER CORRECTEMEN,T
-            # agent.(filename)
+            modelname = request.json.get('modelname')
+            self.thread.check_and_restart_thread()
+            logger.info(f"Starting training with {modelname}")
+            self.agent_manager.reset_agent(modelname)
+            self.thread.tf_logger.step_count = 0
             return jsonify({"message": "Started"}), 200
 
-        @self.app.route('/end_training', methods=['POST'])
+        @self.app.route('/end_training', methods=['GET'])
         def end_training():
-            filename = request.json.get('filename')
-            agent.save_model(filename)
+            self.thread.stop()
+            logger.info(
+                f"Ending training with model: {self.agent_manager.agent.modelname}")
             return jsonify({"message": "Model saved"}), 200
 
         @self.app.route('/get_action', methods=['POST'])
         def get_action():
+            logger.info("Action requested")
             data = request.json
             state = data['state']
             mode = data['mode']
+            agent = self.agent_manager.agent
 
-            if mode == "TRAINING":
-                action = self.agent.choose_action_for_training(state)
-            elif mode == "TESTING":
-                action = self.agent.choose_action_with_model(state)
-            elif mode == "RANDOM":
-                action = self.agent.choose_random_action()
+            if mode == TRAINING:
+                action = agent.choose_action_for_training(
+                    state)
+            elif mode == TESTING:
+                action = agent.choose_action_with_model(
+                    state)
+            elif mode == RANDOM:
+                action = agent.choose_random_action()
             else:
                 return jsonify({"error": "Invalid mode"}), 400
 
@@ -76,6 +62,13 @@ class RouteConfigurator:
 
         @self.app.route('/update_model', methods=['POST'])
         def update_model():
-            data = request.json
-            self.update_queue.put(data)
+            experiences_data = request.json
+            experiences = [
+                (exp["state"], exp["action"], exp["reward"],
+                 exp["next_state"], exp["done"], exp["total_reward"])
+                for exp in experiences_data
+            ]
+            self.agent_manager.update_queue.put(experiences)
+            logger.info("Data received and queued for processing")
+
             return jsonify({"message": "Data received and queued for processing"}), 200

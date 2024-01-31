@@ -1,36 +1,49 @@
 import logging
+import os
 import random
 import tensorflow as tf
 from ..utils.game_states import DOWN_LEFT, DOWN_RIGHT, UP, RIGHT, DOWN, LEFT, UP_LEFT, UP_RIGHT
-from ..settings import ACTION_POSSIBILITIES, BATCH_SIZE, BUFFER_MAX_LEN, DISCOUNT_FACTOR, EPSILON, EPSILON_DECAY, LEARNING_RATE, MIN_EPSILON, MODELS_PATH, STATE_SIZE, TENSORFLOW_LOG_PATH
+from ..settings import ACTION_POSSIBILITIES, BATCH_SIZE, BUFFER_MAX_LEN, DISCOUNT_FACTOR, \
+    EPSILON, EPSILON_DECAY, LEARNING_RATE, MIN_EPSILON, MODELS_PATH, STATE_SIZE
 from collections import deque
 from .dqn_network import DQNNetwork
 from ..utils.common import flatten_list
 
 app_logger = logging.getLogger('app_logger')
-ml_logger = logging.getLogger('ml_logger')
 
 
 class DQNAgent:
 
     def __init__(self, state_size: int = STATE_SIZE, action_size: int = ACTION_POSSIBILITIES):
-        self.model_path = None
         self.models_saving_path = MODELS_PATH
-        self.state_size = state_size
+        self.modelname = None
         self.action_size = action_size
         self.model = DQNNetwork(state_size, action_size)
         self.buffer = ReplayBuffer(buffer_size=BUFFER_MAX_LEN)
-        self.batch_size = BATCH_SIZE
         self.optimizer = tf.keras.optimizers.legacy.Adam(
             learning_rate=LEARNING_RATE)
+        self.batch_size = BATCH_SIZE
         self.gamma = DISCOUNT_FACTOR
         self.epsilon = EPSILON
         self.epsilon_decay = EPSILON_DECAY
         self.min_epsilon = MIN_EPSILON
+
         # logging metrics
         self.current_loss = 0
         self.current_grad_norm = 0
         self.current_reward = 0
+
+    def get_model_full_path(self):
+        if not self.modelname:
+            raise ValueError("Model name is not specified.")
+
+        if not os.path.exists(self.models_saving_path):
+            raise FileNotFoundError(
+                f"The specified path '{self.models_saving_path}' does not exist.")
+
+        full_path = os.path.join(self.models_saving_path, self.modelname)
+
+        return full_path
 
     def choose_random_action(self):
         actions = [UP, UP_RIGHT, RIGHT, DOWN_RIGHT,
@@ -39,7 +52,8 @@ class DQNAgent:
 
     def choose_action_with_model(self, state):
         if not hasattr(self, '_loaded_model'):
-            self._loaded_model = tf.keras.models.load_model(self.model_path)
+            model_path = self.get_model_full_path()
+            self._loaded_model = tf.keras.models.load_model(model_path)
 
         flattened_state = flatten_list(state)
 
@@ -71,14 +85,9 @@ class DQNAgent:
                 [flattened_state], dtype=tf.float32)
             q_values = self.model(state_tensor)[0]
 
-            action = tf.argmax(q_values).numpy()
-            ml_logger.info(
-                f'State: {state} -> predicted action: {str(action)}')
-            return action
+            action = int(tf.argmax(q_values).numpy())
 
-    def check_buffer_to_update_policy(self) -> None:
-        if len(self.buffer) >= self.batch_size:
-            self.update_policy()
+            return action
 
     def update_policy(self):
         """
@@ -87,40 +96,41 @@ class DQNAgent:
         Args:
             batch_size (int): The size of the minibatch to be used for training.
         """
-        minibatch = self.buffer.sample(self.batch_size)
-        for (prev_state, action, reward, next_state, done), total_game_reward in minibatch:
+        if len(self.buffer) >= self.batch_size:
+            minibatch = self.buffer.sample(self.batch_size)
 
-            flattened_prev_state = flatten_list(prev_state)
-            flattened_next_state = flatten_list(next_state)
+            for (prev_state, action, reward, next_state, done, total_game_reward) in minibatch:
+                flattened_prev_state = flatten_list(prev_state)
+                flattened_next_state = flatten_list(next_state)
 
-            if not done:
-                next_state_tensor = tf.convert_to_tensor(
-                    [flattened_next_state], dtype=tf.float32)
+                if not done:
+                    next_state_tensor = tf.convert_to_tensor(
+                        [flattened_next_state], dtype=tf.float32)
 
-                target = reward + self.gamma * \
-                    tf.reduce_max(self.model(next_state_tensor)[0])
-            else:
-                target = total_game_reward
+                    target = reward + self.gamma * \
+                        tf.reduce_max(self.model(next_state_tensor)[0])
+                else:
+                    target = total_game_reward
 
-            with tf.GradientTape() as tape:
-                state_tensor = tf.convert_to_tensor(
-                    [flattened_prev_state], dtype=tf.float32)
-                q_values = self.model(state_tensor)[0]
+                with tf.GradientTape() as tape:
+                    state_tensor = tf.convert_to_tensor(
+                        [flattened_prev_state], dtype=tf.float32)
+                    q_values = self.model(state_tensor)[0]
 
-                # Ensure both tensors are at least 1D
-                target_tensor = tf.expand_dims(target, axis=0)
-                q_value_tensor = tf.expand_dims(q_values[action], axis=0)
+                    # Ensure both tensors are at least 1D
+                    target_tensor = tf.expand_dims(target, axis=0)
+                    q_value_tensor = tf.expand_dims(q_values[action], axis=0)
 
-                # Mean square error computation
-                loss = tf.keras.losses.MSE(target_tensor, q_value_tensor)
-            gradients = tape.gradient(loss, self.model.trainable_variables)
-            grad_norm = tf.linalg.global_norm(gradients)
-            self.optimizer.apply_gradients(
-                zip(gradients, self.model.trainable_variables))
+                    # Mean square error computation
+                    loss = tf.keras.losses.MSE(target_tensor, q_value_tensor)
+                gradients = tape.gradient(loss, self.model.trainable_variables)
+                grad_norm = tf.linalg.global_norm(gradients)
+                self.optimizer.apply_gradients(
+                    zip(gradients, self.model.trainable_variables))
 
-        self.current_loss = loss
-        self.current_grad_norm = grad_norm
-        self.current_reward = reward
+            self.current_loss = loss
+            self.current_grad_norm = grad_norm
+            self.current_reward = reward
 
     def decay_exploration_rate(self):
         """
@@ -130,14 +140,14 @@ class DQNAgent:
         """
         self.epsilon = max(self.epsilon * self.epsilon_decay, self.min_epsilon)
 
-    def save_model(self, filename: str):
+    def save_model(self):
         """
         Save the current model weights to a file.
 
         Args:
             file_path (str): Path where the model weights should be saved.
         """
-        model_path = f'{self.models_saving_path}/{filename}'
+        model_path = self.get_model_full_path()
 
         try:
             self.model.save(model_path)
@@ -163,7 +173,17 @@ class ReplayBuffer:
         """
         self.buffer = deque(maxlen=buffer_size)
 
-    def add(self, experience, total_game_reward: float):
+    def iterate(self):
+        """
+        Iterate over the experiences in the buffer.
+
+        Yields:
+            tuple: Each experience in the buffer.
+        """
+        for experience in self.buffer:
+            yield experience
+
+    def add(self, experience):
         """
         Add a new experience to the buffer.
 
@@ -171,7 +191,7 @@ class ReplayBuffer:
             experience (tuple): A tuple representing an experience 
                                 (state, action, reward, next_state, done).
         """
-        self.buffer.append((experience, total_game_reward))
+        self.buffer.append((experience))
 
     def sample(self, batch_size: int):
         """
