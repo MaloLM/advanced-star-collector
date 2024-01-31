@@ -1,9 +1,3 @@
-# GAME SETTINGS
-GAME_TITLE = "RL star collector game"
-WINDOW_WIDTH = 800
-WINDOW_HEIGHT = 800
-FPS = 60
-
 # Reinforcement Learning settings
 LEARNING_RATE = 0.001
 DISCOUNT_FACTOR = 0.8
@@ -23,6 +17,4 @@ MAX_STEP_PER_EP = 200  # before no efficiency
 
 # Directorioes
 MODELS_PATH = "../data/models"
-FRAMES_PATH = "/tmp/frames"
-EPISODE_SAVING_TO_GIF_PATH = '/tmp/games/'
 TENSORFLOW_LOG_PATH = "../data/tensorflow"

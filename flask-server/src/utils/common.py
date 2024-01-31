@@ -1,6 +1,5 @@
 from datetime import datetime
 import math
-
 import numpy as np
 
 

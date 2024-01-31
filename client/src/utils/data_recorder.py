@@ -2,7 +2,7 @@ import os
 import imageio
 import datetime
 from utils.common import generate_datetime_string
-from utils.settings import EPISODE_SAVING_TO_GIF_PATH, FRAMES_PATH
+from settings import EPISODE_SAVING_TO_GIF_PATH, FRAMES_PATH
 
 
 def create_gif(frames_dir=FRAMES_PATH, gif_path=EPISODE_SAVING_TO_GIF_PATH, gif_name="_world", delete_frames=True, loop=3):

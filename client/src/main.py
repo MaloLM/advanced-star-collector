@@ -34,7 +34,7 @@ def run_episode(process_index, num_eps):
 def main():
     total_num_cores = multiprocessing.cpu_count()
     num_used_cores = 2
-    num_episode = 100
+    num_episode = 20
 
     if num_used_cores <= total_num_cores:
         episode_distribution = distribute_episodes(num_episode, num_used_cores)

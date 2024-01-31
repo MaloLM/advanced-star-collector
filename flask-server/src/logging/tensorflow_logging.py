@@ -1,7 +1,7 @@
 import os
 import tensorflow as tf
 from datetime import datetime
-from config.settings import TENSORFLOW_LOG_PATH
+from utils.settings import TENSORFLOW_LOG_PATH
 
 
 class TensorFlowLogger():
@@ -27,3 +27,13 @@ class TensorFlowLogger():
                 tf.summary.scalar(
                     key, value, step=step_count)
             self.summary_writer.flush()
+
+# def log_episode_to_tensorboard(self) -> None:
+#     metrics = {
+#         "Cumulative OOBounds/ExitDoor": (self.cummulative_out_of_bouds + 1) / (self.cummulative_exit_doors + 1),
+#         "Episode number of step": self.current_episode.step_index,
+#         "Loss": dqn.current_loss,
+#         "Gradient norm": dqn.current_grad_norm,
+#         "Total episode reward": self.current_episode.total_reward,
+#     }
+#     self.tensorflow_logger.log(self.current_running_ep_idx, metrics)

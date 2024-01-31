@@ -1,11 +1,11 @@
 import logging
 import random
 import tensorflow as tf
-from utils.game_states import DOWN_LEFT, DOWN_RIGHT, UP, RIGHT, DOWN, LEFT, UP_LEFT, UP_RIGHT
-from utils.settings import ACTION_POSSIBILITIES, BATCH_SIZE, BUFFER_MAX_LEN, DISCOUNT_FACTOR, EPSILON, EPSILON_DECAY, LEARNING_RATE, MIN_EPSILON, MODELS_PATH, STATE_SIZE, TENSORFLOW_LOG_PATH
+from ..utils.game_states import DOWN_LEFT, DOWN_RIGHT, UP, RIGHT, DOWN, LEFT, UP_LEFT, UP_RIGHT
+from ..settings import ACTION_POSSIBILITIES, BATCH_SIZE, BUFFER_MAX_LEN, DISCOUNT_FACTOR, EPSILON, EPSILON_DECAY, LEARNING_RATE, MIN_EPSILON, MODELS_PATH, STATE_SIZE, TENSORFLOW_LOG_PATH
 from collections import deque
 from .dqn_network import DQNNetwork
-from utils.common import flatten_list
+from ..utils.common import flatten_list
 
 app_logger = logging.getLogger('app_logger')
 ml_logger = logging.getLogger('ml_logger')

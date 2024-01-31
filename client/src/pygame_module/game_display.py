@@ -2,8 +2,8 @@ import os
 import math
 import pygame
 import datetime
+from settings import FRAMES_PATH, GAME_TITLE, WINDOW_HEIGHT, WINDOW_WIDTH
 from utils.colors import WHITE, BLACK
-from utils.settings import FRAMES_PATH, GAME_TITLE, WINDOW_HEIGHT, WINDOW_WIDTH
 
 
 class GameDisplay:

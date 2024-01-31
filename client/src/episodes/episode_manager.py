@@ -1,12 +1,11 @@
 import logging
-import os
 from api.requests import end_training, get_epsilon
 from utils.timer import Timer
-from typing import Any, Callable
+from typing import Any, Callable, Optional
 from .episode import Episode
 from utils.logging import setup_loggers
 from utils.game_states import ON_EXIT_DOOR, OUT_OF_BOUNDS, RANDOM, TESTING, TRAINING
-from utils.settings import MODELS_PATH, NB_OF_EPISODES
+from settings import NB_OF_EPISODES
 
 
 setup_loggers()
@@ -16,14 +15,13 @@ app_logger = logging.getLogger('app_logger')
 class EpisodeManager:
     def __init__(self, nb_eps: int = NB_OF_EPISODES):
         self.mode = TRAINING
-        self.callback = None
+        self.callback: Optional[Callable] = None
         self.nb_episodes = nb_eps
         self.current_running_ep_idx = -1
-        self.current_episode: Episode = None
+        self.current_episode: Optional[Episode] = None
 
         # --- logging
         self.timer = Timer()
-        # self.tensorflow_logger = TensorFlowLogger()
         self.cummulative_exit_doors = 0
         self.cummulative_out_of_bouds = 0
 
@@ -37,23 +35,10 @@ class EpisodeManager:
     def set_callback(self, callback: Callable) -> None:
         self.interface_update_callback: Callable = callback
 
-    # def log_episode_to_tensorboard(self) -> None:
-
-    #     metrics = {
-    #         "Cumulative OOBounds/ExitDoor": (self.cummulative_out_of_bouds + 1) / (self.cummulative_exit_doors + 1),
-    #         "Episode number of step": self.current_episode.step_index,
-    #         "Loss": dqn.current_loss,
-    #         "Gradient norm": dqn.current_grad_norm,
-    #         "Total episode reward": self.current_episode.total_reward,
-    #     }
-
-    #     self.tensorflow_logger.log(self.current_running_ep_idx, metrics)
-
     def train_model(self, model_name: str) -> None:
 
         app_logger.info('TRAINING: Start of a training')
         self.set_mode(TRAINING)
-        # self.tensorflow_logger.set_tensorflow_logger(self.mode)
         self.timer.start()
 
         for idx in range(1, self.nb_episodes + 1):
@@ -64,20 +49,15 @@ class EpisodeManager:
             self.cummulative_exit_doors += 1 if self.current_episode.game_state.current_state == ON_EXIT_DOOR else 0
             self.cummulative_out_of_bouds += 1 if self.current_episode.game_state.current_state == OUT_OF_BOUNDS else 0
 
-            # self.log_episode_to_tensorboard()
-
         self.timer.end()
         end_training(model_name)
         app_logger.info(
             f'TRAINING: End of the training, duration: {self.timer.get_formatted_duration}')
 
-    def run_model(self, model_name: str, models_path: str = MODELS_PATH) -> None:
+    def run_model(self, model_name: str) -> None:
         app_logger.info('TESTING: Start of inference')
         self.set_mode(TESTING)
-        # self.tensorflow_logger.set_tensorflow_logger(self.mode)
         self.timer.start()
-
-        self.agent.model_path = os.path.join(models_path, model_name)
 
         for idx in range(1, self.nb_episodes + 1):
             self.current_running_ep_idx = idx
@@ -87,8 +67,6 @@ class EpisodeManager:
             self.cummulative_exit_doors += 1 if self.current_episode.game_state.current_state == ON_EXIT_DOOR else 0
             self.cummulative_out_of_bouds += 1 if self.current_episode.game_state.current_state == OUT_OF_BOUNDS else 0
 
-            # self.log_episode_to_tensorboard()
-
         self.timer.end()
         app_logger.info(
             f'TESTING: End of inference, duration: {self.timer.get_formatted_duration}')
@@ -96,7 +74,6 @@ class EpisodeManager:
     def run_random(self) -> None:
         app_logger.info('RANDOM: Start of random play')
         self.set_mode(RANDOM)
-        # self.tensorflow_logger.set_tensorflow_logger(self.mode)
         self.timer.start()
 
         for idx in range(1, self.nb_episodes + 1):
@@ -106,8 +83,6 @@ class EpisodeManager:
             self.current_episode.process_game(mode=RANDOM)
             self.cummulative_exit_doors += 1 if self.current_episode.game_state.current_state == ON_EXIT_DOOR else 0
             self.cummulative_out_of_bouds += 1 if self.current_episode.game_state.current_state == OUT_OF_BOUNDS else 0
-
-            # self.log_episode_to_tensorboard()
 
         self.timer.end()
         app_logger.info(

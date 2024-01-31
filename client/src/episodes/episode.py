@@ -7,7 +7,7 @@ from world.world import World
 
 from .game_state import GameState
 from .reward import get_step_reward
-from utils.settings import MAX_STEP_PER_EP
+from settings import MAX_STEP_PER_EP
 from utils.data_recorder import create_gif
 
 from utils.common import normalize_group, one_hot_encode
