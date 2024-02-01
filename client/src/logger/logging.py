@@ -16,7 +16,6 @@ if not os.path.exists(log_directory):
     os.makedirs(log_directory)
 
 app_log_path = os.path.join(log_directory, 'application.log')
-ml_log_path = os.path.join(log_directory, 'ml_metrics.log')
 
 
 def setup_loggers():

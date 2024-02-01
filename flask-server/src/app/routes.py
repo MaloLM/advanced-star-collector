@@ -1,4 +1,5 @@
 import logging
+import sys
 from flask import request, jsonify, Flask
 from ..logger.logging import setup_loggers
 from ..agent.agent_manager import DQNAgentManager
@@ -19,9 +20,6 @@ class RouteConfigurator:
         self.thread.check_and_restart_thread()
 
     def configure_routes(self):
-        @self.app.route('/get_epsilon', methods=['GET'])
-        def get_epsilon():
-            return jsonify({"epsilon": self.agent_manager.agent.epsilon}), 200
 
         @self.app.route('/start_training', methods=['POST'])
         def start_training():
@@ -45,11 +43,12 @@ class RouteConfigurator:
             data = request.json
             state = data['state']
             mode = data['mode']
+            epsilon = data['epsilon']
             agent = self.agent_manager.agent
 
             if mode == TRAINING:
                 action = agent.choose_action_for_training(
-                    state)
+                    state, epsilon)
             elif mode == TESTING:
                 action = agent.choose_action_with_model(
                     state)
@@ -63,12 +62,26 @@ class RouteConfigurator:
         @self.app.route('/update_model', methods=['POST'])
         def update_model():
             experiences_data = request.json
-            experiences = [
-                (exp["state"], exp["action"], exp["reward"],
-                 exp["next_state"], exp["done"], exp["total_reward"])
-                for exp in experiences_data
-            ]
-            self.agent_manager.update_queue.put(experiences)
-            logger.info("Data received and queued for processing")
+
+            experiences = []
+            episode_failed = True
+            for exp in experiences_data:
+                experiences.append((exp["state"], exp["action"], exp["reward"],
+                                   exp["next_state"], exp["done"], exp["total_reward"]))
+
+                print(f"{exp['state'][0]} and {exp['done']}", file=sys.stdout)
+
+                if exp['done'] == True and exp['state'][0][0] == 1.0:
+                    episode_failed = True
+                    print(
+                        f"FAILURE {exp['state'][0]}", file=sys.stdout)
+                    break
+                elif exp['done'] == True and exp['state'][0][3] == 1.0:
+                    episode_failed = False
+                    print(
+                        f"SUCCESS {exp['state'][0]}", file=sys.stdout)
+                    break
+            self.agent_manager.update_experience_replay(
+                experiences, episode_failed)
 
             return jsonify({"message": "Data received and queued for processing"}), 200

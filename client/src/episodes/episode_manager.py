@@ -1,11 +1,12 @@
 import logging
-from api.requests import end_training, get_epsilon
+from time import sleep
+from api.requests import end_training
 from utils.timer import Timer
 from typing import Any, Callable, Optional
 from .episode import Episode
 from logger.logging import setup_loggers
 from utils.game_states import ON_EXIT_DOOR, OUT_OF_BOUNDS, RANDOM, TESTING, TRAINING
-from settings import NB_OF_EPISODES
+from settings import EPSILON, EPSILON_DECAY, MIN_EPSILON, NB_OF_EPISODES
 
 
 setup_loggers()
@@ -19,7 +20,10 @@ class EpisodeManager:
         self.nb_episodes = nb_eps
         self.current_running_ep_idx = -1
         self.current_episode: Optional[Episode] = None
-
+        # personnal epsilon
+        self.epsilon = EPSILON
+        self.epsilon_decay = EPSILON_DECAY
+        self.min_epsilon = MIN_EPSILON
         # --- logging
         self.timer = Timer()
         self.cummulative_exit_doors = 0
@@ -44,11 +48,12 @@ class EpisodeManager:
         for idx in range(1, self.nb_episodes + 1):
             self.current_running_ep_idx = idx
             self.current_episode = Episode(
-                idx, self.interface_update_callback)
+                idx, self.interface_update_callback, self.epsilon)
+            self.decay_exploration_rate()
             self.current_episode.process_game(mode=TRAINING)
             self.cummulative_exit_doors += 1 if self.current_episode.game_state.current_state == ON_EXIT_DOOR else 0
             self.cummulative_out_of_bouds += 1 if self.current_episode.game_state.current_state == OUT_OF_BOUNDS else 0
-
+            sleep(1.2)
         self.timer.end()
         app_logger.info(
             f'TRAINING: End of the training, duration: {self.timer.get_formatted_duration()}')
@@ -78,7 +83,7 @@ class EpisodeManager:
         for idx in range(1, self.nb_episodes + 1):
             self.current_running_ep_idx = idx
             self.current_episode = Episode(
-                idx, self.interface_update_callback)
+                idx, self.interface_update_callback, self.epsilon)
             self.current_episode.process_game(mode=RANDOM)
             self.cummulative_exit_doors += 1 if self.current_episode.game_state.current_state == ON_EXIT_DOOR else 0
             self.cummulative_out_of_bouds += 1 if self.current_episode.game_state.current_state == OUT_OF_BOUNDS else 0
@@ -86,6 +91,14 @@ class EpisodeManager:
         self.timer.end()
         app_logger.info(
             f'RANDOM: End of random play, duration: {self.timer.get_formatted_duration()}')
+
+    def decay_exploration_rate(self):
+        """
+        Update the exploration rate (epsilon).
+
+        This gradually reduces the rate of random action selection to favor exploitation over exploration.
+        """
+        self.epsilon = max(self.epsilon * self.epsilon_decay, self.min_epsilon)
 
     def get_current_state_to_display(self) -> dict[str, dict]:
         current_episode: Episode = self.current_episode
@@ -98,7 +111,7 @@ class EpisodeManager:
             "Mode": self.mode,
             "Duration": self.timer.get_formatted_duration(),
             "Episode": f'{self.current_running_ep_idx}/{self.nb_episodes}',
-            "Epsilon":  round(get_epsilon(), 3)
+            "Epsilon":  round(self.epsilon, 3)
         }
 
         episode_details = self.current_episode.get_info()

@@ -1,4 +1,5 @@
 import math
+from typing import Optional
 from .head import Head
 from .agent import Agent
 from .surface import Surface
@@ -20,7 +21,7 @@ class World:
         self.surface: Surface = surface
         self.collectibles: list[Collectible] = []
         self.exit_door: ExitDoor = self.set_exit_door()
-        self.agent: Agent = self.set_agent()
+        self.agent: Optional[Agent] = self.set_agent()
 
     def reset(self, nb_collectibles=4):
         self.set_exit_door()
@@ -134,21 +135,34 @@ class World:
         This method handles the logic for agent movement, including collision detection
         with collectibles and the exit door, and updates the game state.
         """
-        next_status = self.evaluate_next_position_status(action)
+        #  next_status = self.evaluate_next_position_status(action)
 
-        if next_status in [STAR_COLLECTED, ON_EXIT_DOOR]:
-            collisions: Collectible = self.find_collisions_at_next_position(
+        # if next_status in [STAR_COLLECTED, ON_EXIT_DOOR]:
+        #     collisions: list[Collectible] = self.find_collisions_at_next_position(
+        #         self.agent)
+
+        #     print("-- COLLISIONS: ", collisions)
+
+        #     for collision in collisions[action]:
+        #         if isinstance(collision, ExitDoor):
+        #             self.agent.door_found = 1
+
+        #         self.remove_collided_collectible(collision)
+
+        self.agent.move(action)
+
+    def handle_collisions(self, agent_status: int, action: int):
+        if agent_status in [STAR_COLLECTED, ON_EXIT_DOOR]:
+            collisions: list[Collectible] = self.find_collisions_at_next_position(
                 self.agent)
 
             for collision in collisions[action]:
                 if isinstance(collision, ExitDoor):
                     self.agent.door_found = 1
 
-                self.handle_collectible_collision(collision)
+                self.remove_collided_collectible(collision)
 
-        self.agent.move(action)
-
-    def handle_collectible_collision(self, collision: Collectible) -> None:
+    def remove_collided_collectible(self, collision: Collectible) -> None:
         """
         Handles logic when the agent collides with a collectible.
         """
@@ -198,20 +212,17 @@ class World:
             int: An integer code representing the status of the next position (0: out_of_bounds, 1: nothing, 2: collectible, 3: exit_door, 4: unknown).
         """
         radius = self.agent.shape.radius
-
         position = (self.agent.x_pos, self.agent.y_pos)
 
-        if not self.is_within_surface(position):
-            return OUT_OF_BOUNDS
-        else:
-            if self.is_collision_with_collectibles(position, radius):
-                return STAR_COLLECTED
-
-            elif self.is_collision_with_exit_door(position, radius):
+        if self.is_within_surface(position):
+            if self.is_collision_with_exit_door(position, radius):
                 return ON_EXIT_DOOR
-
+            elif self.is_collision_with_collectibles(position, radius):
+                return STAR_COLLECTED
             else:
                 return ONTO_SURFACE
+        else:
+            return OUT_OF_BOUNDS
 
     def evaluate_next_position_status(self, action: int) -> int:
         """
@@ -229,15 +240,15 @@ class World:
 
         x, y = head.get_seen_position(agent_center)
 
-        if not self.is_within_surface((x, y)):
-            return OUT_OF_BOUNDS
-        else:
-            if self.is_collision_with_collectibles((x, y), radius):
-                return STAR_COLLECTED
-            elif self.is_collision_with_exit_door((x, y), radius):
+        if self.is_within_surface((x, y)):
+            if self.is_collision_with_exit_door((x, y), radius):
                 return ON_EXIT_DOOR
+            elif self.is_collision_with_collectibles((x, y), radius):
+                return STAR_COLLECTED
             else:
                 return ONTO_SURFACE
+        else:
+            return OUT_OF_BOUNDS
 
     def is_within_surface(self, position: tuple[int, int]) -> bool:
         """

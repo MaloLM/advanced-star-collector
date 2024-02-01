@@ -21,13 +21,14 @@ class Episode:
     Equivalent to a game
     """
 
-    def __init__(self, ep_number: int, interface_update_callback: Callable):
+    def __init__(self, ep_number: int, interface_update_callback: Callable, epsilon: float = None):
         self.ep_number: int = ep_number
         self.world = World()
         self.buffer = ReplayBuffer()
         self.game_state = GameState(self.world)
         self.step_index = 0
         self.total_reward = 0
+        self.ep_epsilon = epsilon
         self.steps_reward = []
         self.max_step_count: int = MAX_STEP_PER_EP
         # ----- metrics
@@ -57,13 +58,13 @@ class Episode:
 
             state_to_choose_an_action = self.prepare_state_for_model(state)
 
-            action = get_action(state_to_choose_an_action, mode)
+            action = get_action(state_to_choose_an_action,
+                                mode, self.ep_epsilon)
 
             new_state, reward, done = self.step(action)
-            self.step_index += 1
+            # print(new_state)
 
             if mode == TRAINING:
-
                 next_state = self.prepare_state_for_model(new_state)
 
                 self.save_to_buffer(
@@ -102,20 +103,14 @@ class Episode:
         self.buffer.add(
             (state_to_choose_an_action, action, reward, next_state, done), round(self.total_reward, 3))
 
-    def update_game_state_after_action(self, action: int) -> tuple[list, list]:
-        """
-        Update the game state after performing an action.
-
-        Args:
-            action (int): The rotation action performed by the agent.
-
-        Returns:
-            list: The new state of the game after the action.
-        """
+    def move_and_update(self, action: int) -> tuple[list, list]:
         self.world.move_agent(action)
 
         agent_current_state = self.world.evaluate_current_positions_status()
+
         self.game_state.update_current_state(agent_current_state)
+
+        self.world.handle_collisions(agent_current_state, action)
 
         self.game_state.next_states = self.game_state.evaluate_next_states()
 
@@ -123,7 +118,6 @@ class Episode:
             len(self.world.collectibles)
 
         self.game_state.update_collectibles_status(nb_collected)
-        self.game_state.nb_collected = nb_collected
 
         return self.game_state.get_state()
 
@@ -149,17 +143,19 @@ class Episode:
         Returns:
             tuple: A tuple containing the new state, step reward, and a flag indicating if the game is over.
         """
-        new_state = self.update_game_state_after_action(action)
+        done = self.is_game_over()
+
+        new_state = self.move_and_update(action)
 
         self.world.agent.head_detection, self.world.agent.head_distance_to_a_collectible = self.world.get_agent_direction_sensing()
 
         step_reward = get_step_reward(self.step_index, self.game_state.current_state,
-                                      self.game_state.nb_collected, self.game_state.num_collectibles)
+                                      self.game_state.nb_collected, self.game_state.num_collectibles, self.total_reward)
 
         self.total_reward += step_reward
         self.steps_reward.append(step_reward)
 
-        done = self.is_game_over()
+        self.step_index += 1
 
         return new_state, step_reward, done
 

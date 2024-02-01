@@ -4,8 +4,9 @@ import random
 import tensorflow as tf
 from ..utils.game_states import DOWN_LEFT, DOWN_RIGHT, UP, RIGHT, DOWN, LEFT, UP_LEFT, UP_RIGHT
 from ..settings import ACTION_POSSIBILITIES, BATCH_SIZE, BUFFER_MAX_LEN, DISCOUNT_FACTOR, \
-    EPSILON, EPSILON_DECAY, LEARNING_RATE, MIN_EPSILON, MODELS_PATH, STATE_SIZE
-from collections import deque
+    LEARNING_RATE, MODELS_PATH, STATE_SIZE
+
+from ..utils.replay_buffer import ReplayBuffer
 from .dqn_network import DQNNetwork
 from ..utils.common import flatten_list
 
@@ -24,9 +25,6 @@ class DQNAgent:
             learning_rate=LEARNING_RATE)
         self.batch_size = BATCH_SIZE
         self.gamma = DISCOUNT_FACTOR
-        self.epsilon = EPSILON
-        self.epsilon_decay = EPSILON_DECAY
-        self.min_epsilon = MIN_EPSILON
 
         # logging metrics
         self.current_loss = 0
@@ -63,22 +61,10 @@ class DQNAgent:
         action = tf.argmax(q_values).numpy()
         return action
 
-    def choose_action_for_training(self, state: list) -> int:
-        """
-        Choose an action based on the current state.
-
-        With a probability of epsilon, a random action is chosen (exploration),
-        and with 1-epsilon probability, the action with the highest predicted Q-value is chosen (exploitation).
-
-        Args:
-            state (list or np.array): The current state of the environment.
-
-        Returns:
-            int: The index of the chosen action.
-        """
+    def choose_action_for_training(self, state: list, epsilon: float) -> int:
         flattened_state = flatten_list(state)
 
-        if random.random() < self.epsilon:
+        if random.random() < epsilon:
             return random.randint(0, self.action_size - 1)
         else:
             state_tensor = tf.convert_to_tensor(
@@ -90,12 +76,6 @@ class DQNAgent:
             return action
 
     def update_policy(self):
-        """
-        Update the policy of the agent using a minibatch from the replay buffer.
-
-        Args:
-            batch_size (int): The size of the minibatch to be used for training.
-        """
         if len(self.buffer) >= self.batch_size:
             minibatch = self.buffer.sample(self.batch_size)
 
@@ -132,21 +112,7 @@ class DQNAgent:
             self.current_grad_norm = grad_norm
             self.current_reward = reward
 
-    def decay_exploration_rate(self):
-        """
-        Update the exploration rate (epsilon).
-
-        This gradually reduces the rate of random action selection to favor exploitation over exploration.
-        """
-        self.epsilon = max(self.epsilon * self.epsilon_decay, self.min_epsilon)
-
     def save_model(self):
-        """
-        Save the current model weights to a file.
-
-        Args:
-            file_path (str): Path where the model weights should be saved.
-        """
         model_path = self.get_model_full_path()
 
         try:
@@ -154,62 +120,3 @@ class DQNAgent:
             app_logger.info(f'Model saved at {model_path}.')
         except Exception as error:
             app_logger.error(f'Saving model failed: {error}')
-
-
-class ReplayBuffer:
-    """
-    A simple FIFO (first-in-first-out) replay buffer for storing experiences.
-
-    Attributes:
-        buffer_size (int): The maximum number of experiences the buffer can hold.
-    """
-
-    def __init__(self, buffer_size: int):
-        """
-        Initialize the replay buffer.
-
-        Args:
-            buffer_size (int): Maximum size of the buffer.
-        """
-        self.buffer = deque(maxlen=buffer_size)
-
-    def iterate(self):
-        """
-        Iterate over the experiences in the buffer.
-
-        Yields:
-            tuple: Each experience in the buffer.
-        """
-        for experience in self.buffer:
-            yield experience
-
-    def add(self, experience):
-        """
-        Add a new experience to the buffer.
-
-        Args:
-            experience (tuple): A tuple representing an experience 
-                                (state, action, reward, next_state, done).
-        """
-        self.buffer.append((experience))
-
-    def sample(self, batch_size: int):
-        """
-        Sample a batch of experiences from the buffer.
-
-        Args:
-            batch_size (int): The number of experiences to sample.
-
-        Returns:
-            list: A list of sampled experiences.
-        """
-        return random.sample(self.buffer, batch_size)
-
-    def __len__(self):
-        """
-        Get the current size of the replay buffer.
-
-        Returns:
-            int: The number of experiences currently in the buffer.
-        """
-        return len(self.buffer)

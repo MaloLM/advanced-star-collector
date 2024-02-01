@@ -13,9 +13,9 @@ def hello_world():
         raise Exception("Something went wrong while calling the API")
 
 
-def get_action(state, mode):
+def get_action(state, mode, epsilon):
     url = f"{API_URL}/get_action"
-    data = {"state": state, "mode": mode}
+    data = {"state": state, "mode": mode, "epsilon": epsilon}
     response = requests.post(url, json=data)
     if response.status_code == 200:
         return response.json()["action"]
@@ -62,12 +62,3 @@ def end_training():
     response = requests.get(url)
     if response.status_code != 200:
         raise Exception("Failed to end training on server")
-
-
-def get_epsilon():
-    url = f"{API_URL}/get_epsilon"
-    response = requests.get(url)
-    if response.status_code == 200:
-        return response.json()["epsilon"]
-    else:
-        raise Exception("Failed to get epsilon from server")

@@ -51,7 +51,7 @@ class GameState:
         return agent_next_status
 
     def update_current_state(self, state_index: int) -> None:
-        if 0 <= state_index <= len(self.world.agent.heads) - 1:
+        if 0 <= state_index <= 3:
             self.current_state = state_index
 
     def update_collectibles_status(self, nb_collected: int) -> None:

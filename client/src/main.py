@@ -1,13 +1,13 @@
-from api.requests import end_training, start_training
 import pygame
-from utils.common import distribute_episodes, generate_datetime_string
+import multiprocessing
+from utils.timer import Timer
 from pygame_module.game_display import GameDisplay
 from episodes.episode_manager import EpisodeManager
-import multiprocessing
-import pygame
+from api.requests import end_training, start_training
+from utils.common import distribute_episodes, generate_datetime_string
 
 
-def run_episode(process_index, num_eps, modelname):
+def run_episode(process_index, num_eps):
     pygame.init()
     game_display = GameDisplay()
     episode_manager = EpisodeManager(nb_eps=num_eps)
@@ -37,9 +37,11 @@ def run_episode(process_index, num_eps, modelname):
 
 
 def main():
+    timer = Timer()
+    timer.start()
     total_num_cores = multiprocessing.cpu_count()
-    num_used_cores = 3
-    num_episode = 100
+    num_used_cores = 2
+    num_episode = 20
     modelname = generate_datetime_string() + "_model"
 
     # recupérer status et vérifier que 200 avant de continuer
@@ -52,7 +54,7 @@ def main():
         for process_index in range(num_used_cores):
             num_eps = episode_distribution[process_index]
             p = multiprocessing.Process(
-                target=run_episode, args=(process_index, num_eps, modelname))
+                target=run_episode, args=(process_index, num_eps))
             p.start()
             processes.append(p)
 
@@ -60,6 +62,9 @@ def main():
             p.join()
 
         end_training()
+        timer.end()
+
+        print("Total episode duration", timer.get_formatted_duration())
 
 
 if __name__ == '__main__':

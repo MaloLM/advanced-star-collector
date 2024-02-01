@@ -19,14 +19,17 @@ class ModelUpdaterThread:
         def run():
             while True:
                 try:
+                    print("GETTING AN EP", file=sys.stdout)
                     data = self.agent_manager.update_queue.get(timeout=1)
+                    print("BEFORE UPDATE", file=sys.stdout)
                     self.agent_manager.update_agent(data)
+                    print("BEFORE LOGGING", file=sys.stdout)
                     self.tf_log()
-                    print(
-                        f"Buffer size {len(self.agent_manager.agent.buffer)}", file=sys.stdout)
                 except queue.Empty:
+                    print("QUEUE IS EMPTY", file=sys.stdout)
                     if self.training_finished:
                         self.is_running = False
+                        print("ENDING LOOP", file=sys.stdout)
                         break
 
             self.agent_manager.agent.save_model()
@@ -43,12 +46,13 @@ class ModelUpdaterThread:
             self.start()
 
     def tf_log(self):
+        print("TF LOGGING", file=sys.stdout)
         metrics = {
-            "Queue size": len(self.agent_manager.update_queue),
+            "Queue size": self.agent_manager.update_queue.qsize(),
             "Buffer size": len(self.agent_manager.agent.buffer),
             "Gradient norm": self.agent_manager.agent.current_grad_norm,
             "Loss": self.agent_manager.agent.current_loss,
-            "Epsilon": self.agent_manager.agent.epsilon,
+            "Fail/success proportion inside experience pool": self.agent_manager.nb_failed_ep_count / self.agent_manager.nb_suceeded_ep_count
         }
         self.tf_logger.log(metrics)
         self.tf_logger.step_count += 1
