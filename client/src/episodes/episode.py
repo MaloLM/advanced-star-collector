@@ -44,10 +44,13 @@ class Episode:
         if self.mode == TESTING:
             create_gif()
 
+
     def process_game(self) -> None:
 
         self.timer.start()
-        state = self.reset(self.world)
+        self.world.agent.head_detection, self.world.agent.head_distance_to_a_collectible = self.world.get_agent_direction_sensing()
+        state = self.game_state.get_state()
+        print("STATE", state)
         done = self.is_game_over()
         self.step_index += 1
         self.interface_update_callback()
@@ -74,8 +77,6 @@ class Episode:
 
             if self.step_index >= 600:
                 done = True
-
-        # self.interface_update_callback()
 
         if self.mode == TRAINING:
             update_model(self.buffer)
@@ -146,17 +147,6 @@ class Episode:
         self.step_index += 1
 
         return new_state, step_reward, done
-
-    def reset(self, new_world: World) -> tuple[list, list]:
-        self.steps_reward = []
-        self.total_reward = 0
-        self.world = new_world
-        self.world.reset()
-        self.game_state.reset(self.world)
-
-        self.world.agent.head_detection, self.world.agent.head_distance_to_a_collectible = self.world.get_agent_direction_sensing()
-
-        return self.game_state.get_state()
 
     def get_current_state(self) -> dict[str, dict]:
         props = {

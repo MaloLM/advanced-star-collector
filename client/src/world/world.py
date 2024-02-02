@@ -17,16 +17,15 @@ class World:
     It provides methods to handle movements and interactions within the world, check for collisions, and draw the game state.
     """
 
-    def __init__(self, surface: Surface = Surface()):
+    def __init__(self, surface: Surface = Surface(), num_collectibles=4):
         self.surface: Surface = surface
         self.collectibles: list[Collectible] = []
         self.exit_door: ExitDoor = self.set_exit_door()
         self.agent: Optional[Agent] = self.set_agent()
 
-    def reset(self, nb_collectibles=4):
         self.set_exit_door()
 
-        for _ in range(nb_collectibles):
+        for _ in range(num_collectibles):
             collectible = Collectible()
             collectible_pos = self.get_free_random_position(
                 collectible.shape.radius)

@@ -25,22 +25,6 @@ class GameState:
         self.num_collectibles: int = len(self.world.collectibles)
         self.next_states: list = [0] * len(self.world.agent.heads)
 
-    def reset(self, world: World) -> None:
-        """
-        Reset the game state to the initial state based on the given world.
-
-        Args:
-            world (World): An instance of the World class to reset the game state according to.
-        """
-        self.world = world
-        self.num_collectibles = len(self.world.collectibles)
-        self.nb_collected = 0
-
-        current_state = world.evaluate_current_positions_status()
-        self.update_current_state(current_state)
-
-        self.next_states = self.evaluate_next_states()
-
     def evaluate_next_states(self) -> list:
         agent_next_status = []
 

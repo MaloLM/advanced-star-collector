@@ -63,6 +63,7 @@ class EpisodeManager:
     def run_model(self, modelname) -> None:
         app_logger.info('TESTING: Start of inference')
         self.set_mode(TESTING)
+        self.episode_timeout = 0
         self.timer.start()
 
         for idx in range(1, self.nb_episodes + 1):
@@ -80,6 +81,7 @@ class EpisodeManager:
     def run_random(self) -> None:
         app_logger.info('RANDOM: Start of random play')
         self.set_mode(RANDOM)
+        self.episode_timeout = 0
         self.timer.start()
 
         for idx in range(1, self.nb_episodes + 1):
