@@ -3,8 +3,10 @@ import time
 
 class Timer:
 
-    def __init__(self) -> None:
+    def __init__(self, start_now: bool = False) -> None:
         self.reset()
+        if start_now:
+            self.start()
 
     def get_current_duration(self):
         if self.start_ts is None:
