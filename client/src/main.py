@@ -33,6 +33,32 @@ def run_episode(process_index, num_eps):
     pygame.quit()
 
 
+def run_random(num_eps):
+    pygame.init()
+    game_display = GameDisplay()
+    episode_manager = EpisodeManager(nb_eps=num_eps)
+
+    def callback():
+        state = episode_manager.get_current_state_to_display()
+        info = episode_manager.get_episode_info()
+        mode = episode_manager.mode
+        game_display.update(state, info, mode)
+
+    episode_manager.set_callback(callback)
+
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+
+        episode_manager.run_random()
+
+        running = False
+
+    pygame.quit()
+
+
 def run_trained_model(modelname, num_eps):
     pygame.init()
     game_display = GameDisplay()
@@ -86,9 +112,11 @@ def main():
         end_training()
         timer.end()
 
-        modelname = '2024-02-02_01-09-48_model'
+        # modelname = '2024-02-02_01-09-48_model'
 
-        run_trained_model(modelname, 100)
+        # run_trained_model(modelname, 100)
+
+        run_random(num_eps=10)
 
         print("Total episode duration", timer.get_formatted_duration())
 

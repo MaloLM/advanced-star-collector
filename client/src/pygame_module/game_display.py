@@ -3,7 +3,7 @@ import math
 import pygame
 import datetime
 from utils.colors import WHITE, BLACK
-from utils.game_states import TESTING
+from utils.game_states import RANDOM, TESTING
 from settings import FRAMES_PATH, GAME_TITLE, WINDOW_HEIGHT, WINDOW_WIDTH
 
 
@@ -21,7 +21,7 @@ class GameDisplay:
         self.draw_game_state(game_state)
         self.display_info(episode_info)
         pygame.display.flip()
-        if mode == TESTING:
+        if mode == TESTING:  
             self.save_pygame_frame()
 
     def reset_content(self):

@@ -9,7 +9,7 @@ from api.requests import get_action, update_model
 from utils.common import normalize_group, one_hot_encode
 from logger.data_recorder import create_gif
 from settings import MAX_STEP_PER_EP
-from utils.game_states import OUT_OF_BOUNDS, ON_EXIT_DOOR, TESTING, TRAINING, UNSET
+from utils.game_states import OUT_OF_BOUNDS, ON_EXIT_DOOR, RANDOM, TESTING, TRAINING, UNSET
 
 app_logger = logging.getLogger('app_logger')
 
@@ -75,7 +75,7 @@ class Episode:
             if self.step_index >= 600:
                 done = True
 
-        self.interface_update_callback()
+        # self.interface_update_callback()
 
         if self.mode == TRAINING:
             update_model(self.buffer)
@@ -130,9 +130,10 @@ class Episode:
         return is_out_of_bounds or is_exit_door_found
 
     def step(self, action: int) -> tuple[tuple[list, list], float, bool]:
-        done = self.is_game_over()
 
         new_state = self.move_and_update(action)
+
+        done = self.is_game_over()
 
         self.world.agent.head_detection, self.world.agent.head_distance_to_a_collectible = self.world.get_agent_direction_sensing()
 
