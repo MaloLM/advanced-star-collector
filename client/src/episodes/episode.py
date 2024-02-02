@@ -1,17 +1,15 @@
 import logging
 from typing import Callable
-from api.requests import get_action, update_model
 from utils.replay_buffer import ReplayBuffer
 from utils.timer import Timer
 from world.world import World
-
 from .game_state import GameState
 from .reward import get_step_reward
-from settings import MAX_STEP_PER_EP
-from logger.data_recorder import create_gif
-
+from api.requests import get_action, update_model
 from utils.common import normalize_group, one_hot_encode
-from utils.game_states import OUT_OF_BOUNDS, ON_EXIT_DOOR, TESTING, TRAINING
+from logger.data_recorder import create_gif
+from settings import MAX_STEP_PER_EP
+from utils.game_states import OUT_OF_BOUNDS, ON_EXIT_DOOR, TESTING, TRAINING, UNSET
 
 app_logger = logging.getLogger('app_logger')
 
@@ -21,7 +19,7 @@ class Episode:
     Equivalent to a game
     """
 
-    def __init__(self, ep_number: int, interface_update_callback: Callable, epsilon: float = None):
+    def __init__(self, ep_number: int, interface_update_callback: Callable, epsilon: float = None, mode: str = UNSET):
         self.ep_number: int = ep_number
         self.world = World()
         self.buffer = ReplayBuffer()
@@ -31,6 +29,8 @@ class Episode:
         self.ep_epsilon = epsilon
         self.steps_reward = []
         self.max_step_count: int = MAX_STEP_PER_EP
+        self.mode = mode
+        self.modelname = None
         # ----- metrics
         self.timer = Timer()
         self.total_reward_history = []
@@ -41,9 +41,11 @@ class Episode:
     def __del__(self):
         app_logger.info(
             f'episode: {self.ep_number}, duration: {self.timer.get_formatted_duration()}')
-        # create_gif()
+        if self.mode == TESTING:
+            create_gif()
 
-    def process_game(self, mode: str = TRAINING) -> None:
+    def process_game(self) -> None:
+
         self.timer.start()
         state = self.reset(self.world)
         done = self.is_game_over()
@@ -52,18 +54,14 @@ class Episode:
         self.log_ml_metrics()
 
         while not done:
-
-            if self.step_index >= 200:
-                done = True
-
             state_to_choose_an_action = self.prepare_state_for_model(state)
 
             action = get_action(state_to_choose_an_action,
-                                mode, self.ep_epsilon)
+                                self.mode, self.ep_epsilon, self.modelname)
 
             new_state, reward, done = self.step(action)
 
-            if mode == TRAINING:
+            if self.mode == TRAINING:
                 next_state = self.prepare_state_for_model(new_state)
 
                 self.save_to_buffer(
@@ -74,9 +72,12 @@ class Episode:
             self.interface_update_callback()
             self.log_ml_metrics()
 
+            if self.step_index >= 600:
+                done = True
+
         self.interface_update_callback()
 
-        if mode == TRAINING:
+        if self.mode == TRAINING:
             update_model(self.buffer)
 
         self.total_reward_history.append(self.total_reward)
@@ -123,27 +124,12 @@ class Episode:
         return self.game_state.get_state()
 
     def is_game_over(self) -> bool:
-        """
-        Determine if the game is over based on the current state.
-
-        Returns:
-            bool: True if the game is over, False otherwise.
-        """
         is_out_of_bounds = self.game_state.current_state == OUT_OF_BOUNDS
         is_exit_door_found = self.game_state.current_state == ON_EXIT_DOOR
 
         return is_out_of_bounds or is_exit_door_found
 
     def step(self, action: int) -> tuple[tuple[list, list], float, bool]:
-        """
-        Perform a game step given an action.
-
-        Args:
-            action (int): The action to be performed in this step.
-
-        Returns:
-            tuple: A tuple containing the new state, step reward, and a flag indicating if the game is over.
-        """
         done = self.is_game_over()
 
         new_state = self.move_and_update(action)
@@ -161,15 +147,6 @@ class Episode:
         return new_state, step_reward, done
 
     def reset(self, new_world: World) -> tuple[list, list]:
-        """
-        Reset the game environment for a new episode.
-
-        Args:
-            new_world (World): The new world to be used for the next episode.
-
-        Returns:
-            list: The initial state of the game after resetting.
-        """
         self.steps_reward = []
         self.total_reward = 0
         self.world = new_world

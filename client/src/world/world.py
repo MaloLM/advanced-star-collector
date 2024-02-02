@@ -129,26 +129,6 @@ class World:
         return self.agent
 
     def move_agent(self, action: int) -> None:
-        """
-        Moves the agent based on its current status and updates the game elements accordingly.
-
-        This method handles the logic for agent movement, including collision detection
-        with collectibles and the exit door, and updates the game state.
-        """
-        #  next_status = self.evaluate_next_position_status(action)
-
-        # if next_status in [STAR_COLLECTED, ON_EXIT_DOOR]:
-        #     collisions: list[Collectible] = self.find_collisions_at_next_position(
-        #         self.agent)
-
-        #     print("-- COLLISIONS: ", collisions)
-
-        #     for collision in collisions[action]:
-        #         if isinstance(collision, ExitDoor):
-        #             self.agent.door_found = 1
-
-        #         self.remove_collided_collectible(collision)
-
         self.agent.move(action)
 
     def handle_collisions(self, agent_status: int, action: int):

@@ -48,17 +48,18 @@ class DQNAgent:
                    DOWN, DOWN_LEFT, LEFT, UP_LEFT]
         return random.choice(actions)
 
-    def choose_action_with_model(self, state):
+    def choose_action_with_model(self, state, modelname):
         if not hasattr(self, '_loaded_model'):
-            model_path = self.get_model_full_path()
-            self._loaded_model = tf.keras.models.load_model(model_path)
+            model_path = os.path.join(self.models_saving_path, modelname)
+            if os.path.exists(model_path):
+                self._loaded_model = tf.keras.models.load_model(model_path)
 
         flattened_state = flatten_list(state)
 
         state_tensor = tf.convert_to_tensor(
             [flattened_state], dtype=tf.float32)
         q_values = self._loaded_model(state_tensor)[0]
-        action = tf.argmax(q_values).numpy()
+        action = int(tf.argmax(q_values).numpy())
         return action
 
     def choose_action_for_training(self, state: list, epsilon: float) -> int:

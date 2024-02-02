@@ -50,18 +50,17 @@ class EpisodeManager:
         for idx in range(1, self.nb_episodes + 1):
             self.current_running_ep_idx = idx
             self.current_episode = Episode(
-                idx, self.interface_update_callback, self.epsilon)
+                idx, self.interface_update_callback, self.epsilon, self.mode)
             self.decay_exploration_rate()
             self.update_episode_timeout()
-            self.current_episode.process_game(mode=TRAINING)
-            self.cummulative_exit_doors += 1 if self.current_episode.game_state.current_state == ON_EXIT_DOOR else 0
-            self.cummulative_out_of_bouds += 1 if self.current_episode.game_state.current_state == OUT_OF_BOUNDS else 0
+            self.current_episode.process_game()
             sleep(self.episode_timeout)
+            self.update_state_counters()
         self.timer.end()
         app_logger.info(
             f'TRAINING: End of the training, duration: {self.timer.get_formatted_duration()}')
 
-    def run_model(self) -> None:
+    def run_model(self, modelname) -> None:
         app_logger.info('TESTING: Start of inference')
         self.set_mode(TESTING)
         self.timer.start()
@@ -69,10 +68,10 @@ class EpisodeManager:
         for idx in range(1, self.nb_episodes + 1):
             self.current_running_ep_idx = idx
             self.current_episode = Episode(
-                idx, self.agent, self.interface_update_callback)
-            self.current_episode.process_game(mode=TESTING)
-            self.cummulative_exit_doors += 1 if self.current_episode.game_state.current_state == ON_EXIT_DOOR else 0
-            self.cummulative_out_of_bouds += 1 if self.current_episode.game_state.current_state == OUT_OF_BOUNDS else 0
+                idx, self.interface_update_callback, self.epsilon, self.mode)
+            self.current_episode.modelname = modelname
+            self.current_episode.process_game()
+            self.update_state_counters()
 
         self.timer.end()
         app_logger.info(
@@ -86,10 +85,9 @@ class EpisodeManager:
         for idx in range(1, self.nb_episodes + 1):
             self.current_running_ep_idx = idx
             self.current_episode = Episode(
-                idx, self.interface_update_callback, self.epsilon)
-            self.current_episode.process_game(mode=RANDOM)
-            self.cummulative_exit_doors += 1 if self.current_episode.game_state.current_state == ON_EXIT_DOOR else 0
-            self.cummulative_out_of_bouds += 1 if self.current_episode.game_state.current_state == OUT_OF_BOUNDS else 0
+                idx, self.interface_update_callback, self.epsilon, self.mode)
+            self.current_episode.process_game()
+            self.update_state_counters()
 
         self.timer.end()
         app_logger.info(
@@ -107,6 +105,10 @@ class EpisodeManager:
         """
         self.epsilon = exponential_decay(
             self.current_running_ep_idx, self.nb_episodes)
+
+    def update_state_counters(self):
+        self.cummulative_exit_doors += 1 if self.current_episode.game_state.current_state == ON_EXIT_DOOR else 0
+        self.cummulative_out_of_bouds += 1 if self.current_episode.game_state.current_state == OUT_OF_BOUNDS else 0
 
     def get_current_state_to_display(self) -> dict[str, dict]:
         current_episode: Episode = self.current_episode

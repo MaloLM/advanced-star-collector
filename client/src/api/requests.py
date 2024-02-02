@@ -4,18 +4,10 @@ import requests
 API_URL = "http://127.0.0.1:5000"
 
 
-def hello_world():
-    url = f"{API_URL}/helloworld"
-    response = requests.get(url)
-    if response.status_code == 200:
-        return response.json()
-    else:
-        raise Exception("Something went wrong while calling the API")
-
-
-def get_action(state, mode, epsilon):
+def get_action(state, mode, epsilon, modelname=None):
     url = f"{API_URL}/get_action"
-    data = {"state": state, "mode": mode, "epsilon": epsilon}
+    data = {"state": state, "mode": mode,
+            "epsilon": epsilon, "modelname": modelname}
     response = requests.post(url, json=data)
     if response.status_code == 200:
         return response.json()["action"]

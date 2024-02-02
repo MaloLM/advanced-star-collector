@@ -41,9 +41,12 @@ class RouteConfigurator:
         def get_action():
             logger.info("Action requested")
             data = request.json
+
             state = data['state']
             mode = data['mode']
             epsilon = data['epsilon']
+            modelname = data['modelname']
+
             agent = self.agent_manager.agent
 
             if mode == TRAINING:
@@ -51,7 +54,7 @@ class RouteConfigurator:
                     state, epsilon)
             elif mode == TESTING:
                 action = agent.choose_action_with_model(
-                    state)
+                    state, modelname)
             elif mode == RANDOM:
                 action = agent.choose_random_action()
             else:

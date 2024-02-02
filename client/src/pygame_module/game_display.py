@@ -2,8 +2,9 @@ import os
 import math
 import pygame
 import datetime
-from settings import FRAMES_PATH, GAME_TITLE, WINDOW_HEIGHT, WINDOW_WIDTH
 from utils.colors import WHITE, BLACK
+from utils.game_states import TESTING
+from settings import FRAMES_PATH, GAME_TITLE, WINDOW_HEIGHT, WINDOW_WIDTH
 
 
 class GameDisplay:
@@ -15,38 +16,21 @@ class GameDisplay:
         pygame.display.set_caption(GAME_TITLE)
         self.background_color = background_color
 
-    def update(self, game_state, episode_info):
+    def update(self, game_state, episode_info, mode):
         self.reset_content()
         self.draw_game_state(game_state)
         self.display_info(episode_info)
         pygame.display.flip()
-        # self.save_pygame_frame()
+        if mode == TESTING:
+            self.save_pygame_frame()
 
     def reset_content(self):
         self.window.fill(self.background_color)
 
     def draw_circle(self, x, y, radius, color):
-        """
-        Draws a circle on the Pygame screen.
-
-        :param screen: Pygame surface on which to draw.
-        :param x: The x-coordinate of the center of the circle.
-        :param y: The y-coordinate of the center of the circle.
-        :param radius: The radius of the circle.
-        :param color: The color of the circle.
-        """
         pygame.draw.circle(self.window, color, (x, y), radius)
 
     def draw_line(self, start_pos, end_pos, color, width=1):
-        """
-        Draws a line on the Pygame screen.
-
-        :param screen: Pygame surface on which to draw.
-        :param start_pos: Tuple (x, y) representing the start position of the line.
-        :param end_pos: Tuple (x, y) representing the end position of the line.
-        :param color: Color of the line.
-        :param width: Width of the line (optional, default is 1).
-        """
         pygame.draw.line(self.window, color, start_pos, end_pos, width)
 
     def draw_game_state(self, game_state):
@@ -115,15 +99,6 @@ class GameDisplay:
             start_y += line_height  # Move to the next line
 
     def calculate_coordinates(self, distance, center_x, center_y, angle):
-        """
-        Calculate the coordinates of a point at a given distance and angle from a center point.
-
-        :param distance: Distance from the center point.
-        :param center_x: x-coordinate of the center point.
-        :param center_y: y-coordinate of the center point.
-        :param angle: Angle in degrees from the horizontal.
-        :return: (x, y) coordinates of the point, as integers.
-        """
         # Convert angle to radians
         angle_rad = math.radians(angle)
 
