@@ -69,19 +69,18 @@ class RouteConfigurator:
                 experiences.append((exp["state"], exp["action"], exp["reward"],
                                    exp["next_state"], exp["done"], exp["total_reward"]))
 
-                print(f"{exp['state'][0]} and {exp['done']}", file=sys.stdout)
-
                 if exp['done'] == True and exp['state'][0][0] == 1.0:
                     episode_failed = True
-                    print(
-                        f"FAILURE {exp['state'][0]}", file=sys.stdout)
                     break
                 elif exp['done'] == True and exp['state'][0][3] == 1.0:
                     episode_failed = False
-                    print(
-                        f"SUCCESS {exp['state'][0]}", file=sys.stdout)
                     break
             self.agent_manager.update_experience_replay(
                 experiences, episode_failed)
 
             return jsonify({"message": "Data received and queued for processing"}), 200
+
+        @self.app.route('/queue_size', methods=['GET'])
+        def get_queue_size():
+            queue_size = self.agent_manager.update_queue.qsize()
+            return jsonify({"queue_size": queue_size}), 200

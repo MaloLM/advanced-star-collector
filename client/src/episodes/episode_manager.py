@@ -1,6 +1,7 @@
 import logging
 from time import sleep
-from api.requests import end_training
+from api.requests import get_queue_size
+from utils.common import exponential_decay
 from utils.timer import Timer
 from typing import Any, Callable, Optional
 from .episode import Episode
@@ -20,6 +21,7 @@ class EpisodeManager:
         self.nb_episodes = nb_eps
         self.current_running_ep_idx = -1
         self.current_episode: Optional[Episode] = None
+        self.episode_timeout = 1
         # personnal epsilon
         self.epsilon = EPSILON
         self.epsilon_decay = EPSILON_DECAY
@@ -50,10 +52,11 @@ class EpisodeManager:
             self.current_episode = Episode(
                 idx, self.interface_update_callback, self.epsilon)
             self.decay_exploration_rate()
+            self.update_episode_timeout()
             self.current_episode.process_game(mode=TRAINING)
             self.cummulative_exit_doors += 1 if self.current_episode.game_state.current_state == ON_EXIT_DOOR else 0
             self.cummulative_out_of_bouds += 1 if self.current_episode.game_state.current_state == OUT_OF_BOUNDS else 0
-            sleep(1.2)
+            sleep(self.episode_timeout)
         self.timer.end()
         app_logger.info(
             f'TRAINING: End of the training, duration: {self.timer.get_formatted_duration()}')
@@ -92,13 +95,18 @@ class EpisodeManager:
         app_logger.info(
             f'RANDOM: End of random play, duration: {self.timer.get_formatted_duration()}')
 
+    def update_episode_timeout(self):
+        queue_size = get_queue_size()
+        self.episode_timeout = queue_size / 10
+
     def decay_exploration_rate(self):
         """
         Update the exploration rate (epsilon).
 
         This gradually reduces the rate of random action selection to favor exploitation over exploration.
         """
-        self.epsilon = max(self.epsilon * self.epsilon_decay, self.min_epsilon)
+        self.epsilon = exponential_decay(
+            self.current_running_ep_idx, self.nb_episodes)
 
     def get_current_state_to_display(self) -> dict[str, dict]:
         current_episode: Episode = self.current_episode
@@ -111,7 +119,8 @@ class EpisodeManager:
             "Mode": self.mode,
             "Duration": self.timer.get_formatted_duration(),
             "Episode": f'{self.current_running_ep_idx}/{self.nb_episodes}',
-            "Epsilon":  round(self.epsilon, 3)
+            "Epsilon":  round(self.epsilon, 3),
+            "Timeout": f'{self.episode_timeout}s'
         }
 
         episode_details = self.current_episode.get_info()

@@ -41,7 +41,7 @@ def main():
     timer.start()
     total_num_cores = multiprocessing.cpu_count()
     num_used_cores = 2
-    num_episode = 20
+    num_episode = 400
     modelname = generate_datetime_string() + "_model"
 
     # recupérer status et vérifier que 200 avant de continuer

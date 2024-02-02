@@ -19,17 +19,12 @@ class ModelUpdaterThread:
         def run():
             while True:
                 try:
-                    print("GETTING AN EP", file=sys.stdout)
                     data = self.agent_manager.update_queue.get(timeout=1)
-                    print("BEFORE UPDATE", file=sys.stdout)
                     self.agent_manager.update_agent(data)
-                    print("BEFORE LOGGING", file=sys.stdout)
                     self.tf_log()
                 except queue.Empty:
-                    print("QUEUE IS EMPTY", file=sys.stdout)
                     if self.training_finished:
                         self.is_running = False
-                        print("ENDING LOOP", file=sys.stdout)
                         break
 
             self.agent_manager.agent.save_model()
@@ -46,7 +41,6 @@ class ModelUpdaterThread:
             self.start()
 
     def tf_log(self):
-        print("TF LOGGING", file=sys.stdout)
         metrics = {
             "Queue size": self.agent_manager.update_queue.qsize(),
             "Buffer size": len(self.agent_manager.agent.buffer),

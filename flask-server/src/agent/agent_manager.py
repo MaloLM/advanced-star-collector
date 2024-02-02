@@ -21,10 +21,8 @@ class DQNAgentManager:
         self.nb_suceeded_ep_count = 1
 
     def update_agent(self, experiences):
-        print("INSIDE UPDATE", file=sys.stdout)
         for experience in experiences:
             self.agent.buffer.add(experience)
-        print("BEFORE UPDATE POLICY \n", file=sys.stdout)
         self.agent.update_policy()
 
     def update_experience_replay(self, experiences: list, episode_failed: bool):

@@ -93,3 +93,39 @@ def one_hot_encode(value, num_classes):
     one_hot = np.zeros(num_classes)
     one_hot[value] = 1
     return one_hot.tolist()
+
+
+@staticmethod
+def calculate_decay_lambda(factor, total_episodes, target_y=0.01):
+    """
+    Calcule le taux de décroissance lambda pour une fonction de décroissance exponentielle.
+
+    Args:
+        factor (float): Le facteur du total des épisodes à quel point y doit être proche de 0.
+        total_episodes (int): Le nombre total d'épisodes.
+        target_y (float, optional): La valeur cible de y à ce point. Valeur par défaut à 0.01.
+
+    Returns:
+        float: Le taux de décroissance lambda calculé.
+    """
+    critical_point = factor * total_episodes
+    lambda_value = -math.log(target_y) / critical_point
+    return lambda_value
+
+
+@staticmethod
+def exponential_decay(x, total_episodes, factor=0.85, target_y=0.01):
+    """
+    Calcule la valeur de décroissance exponentielle pour un x donné, un facteur, et un total d'épisodes.
+
+    Args:
+        x (float): La valeur actuelle de x (par exemple, le numéro de l'épisode).
+        factor (float): Le facteur du total des épisodes à quel point y doit être proche de 0.
+        total_episodes (int): Le nombre total d'épisodes.
+        target_y (float, optional): La valeur cible de y à ce point. Valeur par défaut à 0.01.
+
+    Returns:
+        float: La valeur de y après décroissance.
+    """
+    lambda_value = calculate_decay_lambda(factor, total_episodes, target_y)
+    return math.exp(-lambda_value * x)

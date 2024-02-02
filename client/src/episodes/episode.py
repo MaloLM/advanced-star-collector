@@ -62,7 +62,6 @@ class Episode:
                                 mode, self.ep_epsilon)
 
             new_state, reward, done = self.step(action)
-            # print(new_state)
 
             if mode == TRAINING:
                 next_state = self.prepare_state_for_model(new_state)
@@ -74,6 +73,8 @@ class Episode:
 
             self.interface_update_callback()
             self.log_ml_metrics()
+
+        self.interface_update_callback()
 
         if mode == TRAINING:
             update_model(self.buffer)

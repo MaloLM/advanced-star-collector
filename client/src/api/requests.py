@@ -62,3 +62,15 @@ def end_training():
     response = requests.get(url)
     if response.status_code != 200:
         raise Exception("Failed to end training on server")
+
+
+def get_queue_size():
+    url = f"{API_URL}/queue_size"
+    response = requests.get(url)
+    if response.status_code == 200:
+        response_data = response.json()
+        queue_size = response_data.get("queue_size")
+        return queue_size
+    else:
+        print(
+            f"Failed to retrieve queue size, status code: {response.status_code}")
