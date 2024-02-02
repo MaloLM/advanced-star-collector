@@ -72,12 +72,15 @@ class RouteConfigurator:
                 experiences.append((exp["state"], exp["action"], exp["reward"],
                                    exp["next_state"], exp["done"], exp["total_reward"]))
 
-                if exp['done'] == True and exp['state'][0][0] == 1.0:
+                if exp['done'] == True and exp['next_state'][0][0] == 1.0:
                     episode_failed = True
+                    print("1", file=sys.stdout)
                     break
-                elif exp['done'] == True and exp['state'][0][3] == 1.0:
+                elif exp['done'] == True and exp['next_state'][0][3] == 1.0:
+                    print("2", file=sys.stdout)
                     episode_failed = False
                     break
+
             self.agent_manager.update_experience_replay(
                 experiences, episode_failed)
 

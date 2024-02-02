@@ -33,8 +33,6 @@ class Episode:
         self.modelname = None
         # ----- metrics
         self.timer = Timer()
-        self.total_reward_history = []
-        self.total_collected_history = []
         # ---- callback
         self.interface_update_callback = interface_update_callback
 
@@ -44,13 +42,11 @@ class Episode:
         if self.mode == TESTING:
             create_gif()
 
-
     def process_game(self) -> None:
 
         self.timer.start()
         self.world.agent.head_detection, self.world.agent.head_distance_to_a_collectible = self.world.get_agent_direction_sensing()
         state = self.game_state.get_state()
-        print("STATE", state)
         done = self.is_game_over()
         self.step_index += 1
         self.interface_update_callback()
@@ -62,7 +58,8 @@ class Episode:
             action = get_action(state_to_choose_an_action,
                                 self.mode, self.ep_epsilon, self.modelname)
 
-            new_state, reward, done = self.step(action)
+            new_state, reward = self.step(action)
+            done = self.is_game_over()
 
             if self.mode == TRAINING:
                 next_state = self.prepare_state_for_model(new_state)
@@ -80,10 +77,6 @@ class Episode:
 
         if self.mode == TRAINING:
             update_model(self.buffer)
-
-        self.total_reward_history.append(self.total_reward)
-        self.total_collected_history.append(
-            self.game_state.nb_collected)
 
         self.timer.end()
 
@@ -134,7 +127,7 @@ class Episode:
 
         new_state = self.move_and_update(action)
 
-        done = self.is_game_over()
+        # done = self.is_game_over()
 
         self.world.agent.head_detection, self.world.agent.head_distance_to_a_collectible = self.world.get_agent_direction_sensing()
 
@@ -146,7 +139,7 @@ class Episode:
 
         self.step_index += 1
 
-        return new_state, step_reward, done
+        return new_state, step_reward
 
     def get_current_state(self) -> dict[str, dict]:
         props = {
