@@ -31,17 +31,22 @@ class DQNAgent:
         self.current_grad_norm = 0
         self.current_reward = 0
 
-    def get_model_full_path(self):
-        if not self.modelname:
-            raise ValueError("Model name is not specified.")
+    def get_model_path(self, modelname):
 
         if not os.path.exists(self.models_saving_path):
             raise FileNotFoundError(
                 f"The specified path '{self.models_saving_path}' does not exist.")
 
-        full_path = os.path.join(self.models_saving_path, self.modelname)
+        full_path = os.path.join(self.models_saving_path, modelname)
 
         return full_path
+
+    def is_model_saved(self, modelname):
+        model_path = self.get_model_path(modelname)
+        if os.path.exists(model_path):
+            return True
+        else:
+            return False
 
     def choose_random_action(self):
         actions = [UP, UP_RIGHT, RIGHT, DOWN_RIGHT,
@@ -50,9 +55,11 @@ class DQNAgent:
 
     def choose_action_with_model(self, state, modelname):
         if not hasattr(self, '_loaded_model'):
-            model_path = os.path.join(self.models_saving_path, modelname)
+            model_path = self.get_model_path(modelname)
             if os.path.exists(model_path):
                 self._loaded_model = tf.keras.models.load_model(model_path)
+            else:
+                raise FileNotFoundError('Model not found')
 
         flattened_state = flatten_list(state)
 
@@ -114,7 +121,7 @@ class DQNAgent:
             self.current_reward = reward
 
     def save_model(self):
-        model_path = self.get_model_full_path()
+        model_path = self.get_model_path(self.modelname)
 
         try:
             self.model.save(model_path)

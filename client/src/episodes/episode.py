@@ -28,7 +28,7 @@ class Episode:
         self.total_reward = 0
         self.ep_epsilon = epsilon
         self.steps_reward = []
-        self.max_step_count: int = MAX_STEP_PER_EP
+
         self.mode = mode
         self.modelname = None
         # ----- metrics
@@ -42,30 +42,28 @@ class Episode:
         if self.mode == TESTING:
             create_gif()
 
+    def update_step_count(self):
+        self.step_index += 1
+        self.game_state.step_index = self.step_index
+
     def process_game(self) -> None:
 
         self.timer.start()
-        self.world.agent.head_detection, self.world.agent.head_distance_to_a_collectible = self.world.get_agent_direction_sensing()
         state = self.game_state.get_state()
         done = self.is_game_over()
-        self.step_index += 1
         self.interface_update_callback()
         self.log_ml_metrics()
 
         while not done:
-            state_to_choose_an_action = self.prepare_state_for_model(state)
 
-            action = get_action(state_to_choose_an_action,
+            action = get_action(state,
                                 self.mode, self.ep_epsilon, self.modelname)
 
-            new_state, reward = self.step(action)
-            done = self.is_game_over()
+            new_state, reward, done = self.step(action)
 
             if self.mode == TRAINING:
-                next_state = self.prepare_state_for_model(new_state)
-
                 self.save_to_buffer(
-                    state_to_choose_an_action, action, reward, next_state, done)
+                    state, action, reward, new_state, done)
 
             state = new_state
 
@@ -79,21 +77,6 @@ class Episode:
             update_model(self.buffer)
 
         self.timer.end()
-
-    def prepare_state_for_model(self, state: list):
-        distance_when_nothing = self.world.surface.shape.radius * 4
-        next_s = one_hot_encode(state[0][2], 4)  # len 4
-        star_prop = state[0][0]  # len 1
-        door_found = state[0][1]  # len 1
-        step_count = self.step_index / self.max_step_count  # len 1
-        vision = state[1]  # len 8
-        sensing_state = state[2]  # len 8
-        sensing_distances = normalize_group(
-            state[3], 0, distance_when_nothing)  # len 8
-
-        prapared_state = [next_s, star_prop, door_found, step_count,
-                          vision, sensing_state, sensing_distances,]
-        return prapared_state
 
     def save_to_buffer(self, state_to_choose_an_action, action, reward, next_state, done):
         self.buffer.add(
@@ -127,19 +110,17 @@ class Episode:
 
         new_state = self.move_and_update(action)
 
-        # done = self.is_game_over()
-
-        self.world.agent.head_detection, self.world.agent.head_distance_to_a_collectible = self.world.get_agent_direction_sensing()
-
         step_reward = get_step_reward(self.step_index, self.game_state.current_state,
                                       self.game_state.nb_collected, self.game_state.num_collectibles, self.total_reward)
 
         self.total_reward += step_reward
         self.steps_reward.append(step_reward)
 
-        self.step_index += 1
+        self.update_step_count()
 
-        return new_state, step_reward
+        done = self.is_game_over()
+
+        return new_state, step_reward, done
 
     def get_current_state(self) -> dict[str, dict]:
         props = {

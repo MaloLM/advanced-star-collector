@@ -66,3 +66,16 @@ def get_queue_size():
     else:
         print(
             f"Failed to retrieve queue size, status code: {response.status_code}")
+
+
+def is_model_saved(modelname: str):
+    url = f"{API_URL}/is_model_saved"
+    data = {"modelname": modelname}
+    response = requests.post(url, json=data)
+    if response.status_code == 200:
+        response_data = response.json()
+        is_model_saved = response_data.get("is_model_saved")
+        return is_model_saved
+    else:
+        print(
+            f"Failed to retrieve the attribute, status code: {response.status_code}")

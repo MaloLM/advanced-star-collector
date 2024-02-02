@@ -1,7 +1,7 @@
 import logging
 from time import sleep
 from api.requests import get_queue_size
-from utils.common import exponential_decay
+from utils.common import epsilon_decay
 from utils.timer import Timer
 from typing import Any, Callable, Optional
 from .episode import Episode
@@ -105,7 +105,7 @@ class EpisodeManager:
 
         This gradually reduces the rate of random action selection to favor exploitation over exploration.
         """
-        self.epsilon = exponential_decay(
+        self.epsilon = epsilon_decay(
             self.current_running_ep_idx, self.nb_episodes)
 
     def update_state_counters(self):

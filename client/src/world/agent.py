@@ -18,7 +18,7 @@ class Agent:
         self.head_detection = None
         self.head_distance_to_a_collectible = None
 
-        for angle in [0, 45, 90, 135, 180, 225, 270, 315]:
+        for angle in [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330]:
             self.add_head(Head(self.step, angle))
 
     def add_head(self, head: Head):

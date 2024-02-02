@@ -1,3 +1,5 @@
+from settings import MAX_STEP_PER_EP
+from utils.common import flatten_list, normalize_group, one_hot_encode
 from world.world import World
 from utils.game_states import ONTO_SURFACE
 
@@ -22,6 +24,8 @@ class GameState:
         self.world: World = world
         self.current_state: int = ONTO_SURFACE
         self.nb_collected: int = 0
+        self.step_index = 0
+        self.max_step_count: int = MAX_STEP_PER_EP
         self.num_collectibles: int = len(self.world.collectibles)
         self.next_states: list = [0] * len(self.world.agent.heads)
 
@@ -48,18 +52,24 @@ class GameState:
         if 0 <= nb_collected < self.num_collectibles:
             self.nb_collected = nb_collected
 
-    def get_state(self) -> tuple[list, list]:
-        """
-        Return the current state of the game.
+    def get_state(self):
+        default_distance = self.world.surface.shape.radius * 4
 
-        Combines various state components such as collection progress, exit door status,
-        orientation, and next state representation into a single state vector.
+        normalized_collection_progress = (self.nb_collected / self.num_collectibles
+                                          if self.num_collectibles > 0 else 0)
 
-        Returns:
-            list: The current state of the game as a normalized list.
-        """
-        normalized_collection_progress = self.nb_collected / \
-            self.num_collectibles if self.num_collectibles > 0 else 0
+        head_detection, head_distance_to_collectible = self.world.get_agent_direction_sensing()
 
-        return [normalized_collection_progress, self.world.agent.door_found, self.current_state], \
-            self.next_states, self.world.agent.head_detection, self.world.agent.head_distance_to_a_collectible
+        prepared_state = [
+            # État actuel one-hot encoded
+            one_hot_encode(self.current_state, 4),
+            normalized_collection_progress,         # Progrès de la collection normalisé
+            self.world.agent.door_found,            # Porte trouvée
+            self.step_index / self.max_step_count,  # Compte des étapes normalisé
+            self.next_states,                       # États suivants (vision)
+            head_detection,                         # Détection de direction
+            normalize_group(head_distance_to_collectible, 0,
+                            default_distance)  # Distances normalisées
+        ]
+
+        return prepared_state

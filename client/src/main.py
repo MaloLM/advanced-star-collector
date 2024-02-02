@@ -1,3 +1,5 @@
+from time import sleep
+from api.requests import is_model_saved
 from episodes.runners import run_multicore_training, run_random, run_trained_model
 
 from utils.timer import Timer
@@ -6,18 +8,21 @@ from utils.timer import Timer
 def main():
     timer = Timer(start_now=True)
 
-    num_used_cores = 3
-    num_episode = 600
+    num_used_cores = 4
+    num_episode = 1000
+
+    # run_random(num_eps=200)
 
     modelname = run_multicore_training(num_used_cores, num_episode)
 
-    # run_trained_model(modelname, 10)
+    # while not is_model_saved(modelname):
+    #     sleep(10)
 
-    # wait server finished before running model (waiting loop ?)
-    # run_random(num_eps=200)
+    # modelname = '2024-02-02_19-37-01_model'
+    # run_trained_model(modelname, 100)
 
     timer.end()
-    print("Total episode duration", timer.get_formatted_duration())
+    print("Total duration", timer.get_formatted_duration())
 
 
 if __name__ == '__main__':

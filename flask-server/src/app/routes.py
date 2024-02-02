@@ -72,13 +72,11 @@ class RouteConfigurator:
                 experiences.append((exp["state"], exp["action"], exp["reward"],
                                    exp["next_state"], exp["done"], exp["total_reward"]))
 
-                if exp['done'] == True and exp['next_state'][0][0] == 1.0:
-                    episode_failed = True
-                    print("1", file=sys.stdout)
-                    break
-                elif exp['done'] == True and exp['next_state'][0][3] == 1.0:
-                    print("2", file=sys.stdout)
+                if (exp['done'] == True and exp['next_state'][0][3] == 1.0) or exp['state'][1] == 1:
                     episode_failed = False
+                    break
+                elif exp['done'] == True and exp['next_state'][0][0] == 1.0:
+                    episode_failed = True
                     break
 
             self.agent_manager.update_experience_replay(
@@ -90,3 +88,11 @@ class RouteConfigurator:
         def get_queue_size():
             queue_size = self.agent_manager.update_queue.qsize()
             return jsonify({"queue_size": queue_size}), 200
+
+        @self.app.route('/is_model_saved', methods=['POST'])
+        def is_model_saved():
+            data = request.json
+
+            modelname = data['modelname']
+            is_model_saved = self.agent_manager.agent.is_model_saved(modelname)
+            return jsonify({"is_model_saved": is_model_saved}), 200
