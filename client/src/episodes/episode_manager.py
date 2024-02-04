@@ -97,7 +97,7 @@ class EpisodeManager:
 
     def update_episode_timeout(self):
         queue_size = get_queue_size()
-        self.episode_timeout = queue_size / 10
+        self.episode_timeout = queue_size / 7
 
     def decay_exploration_rate(self):
         """
@@ -124,7 +124,7 @@ class EpisodeManager:
             "Duration": self.timer.get_formatted_duration(),
             "Episode": f'{self.current_running_ep_idx}/{self.nb_episodes}',
             "Epsilon":  round(self.epsilon, 3),
-            "Timeout": f'{self.episode_timeout}s'
+            "Timeout": f'{round(self.episode_timeout, 2)}s'
         }
 
         episode_details = self.current_episode.get_info()

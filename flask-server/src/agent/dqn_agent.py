@@ -70,7 +70,9 @@ class DQNAgent:
         return action
 
     def choose_action_for_training(self, state: list, epsilon: float) -> int:
+
         flattened_state = flatten_list(state)
+        print(flattened_state)
 
         if random.random() < epsilon:
             return random.randint(0, self.action_size - 1)
@@ -120,11 +122,13 @@ class DQNAgent:
             self.current_grad_norm = grad_norm
             self.current_reward = reward
 
-    def save_model(self):
-        model_path = self.get_model_path(self.modelname)
+    def save_model(self, modelname):
+        model_path = self.get_model_path(modelname)
 
         try:
             self.model.save(model_path)
             app_logger.info(f'Model saved at {model_path}.')
+            return True
         except Exception as error:
             app_logger.error(f'Saving model failed: {error}')
+            return False

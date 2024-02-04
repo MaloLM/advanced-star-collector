@@ -6,9 +6,7 @@ from world.world import World
 from .game_state import GameState
 from .reward import get_step_reward
 from api.requests import get_action, update_model
-from utils.common import normalize_group, one_hot_encode
 from logger.data_recorder import create_gif
-from settings import MAX_STEP_PER_EP
 from utils.game_states import OUT_OF_BOUNDS, ON_EXIT_DOOR, RANDOM, TESTING, TRAINING, UNSET
 
 app_logger = logging.getLogger('app_logger')
@@ -83,6 +81,7 @@ class Episode:
             (state_to_choose_an_action, action, reward, next_state, done), round(self.total_reward, 3))
 
     def move_and_update(self, action: int) -> tuple[list, list]:
+
         self.world.move_agent(action)
 
         agent_current_state = self.world.evaluate_current_positions_status()
@@ -93,8 +92,7 @@ class Episode:
 
         self.game_state.next_states = self.game_state.evaluate_next_states()
 
-        nb_collected = self.game_state.num_collectibles - \
-            len(self.world.collectibles)
+        nb_collected = self.game_state.num_collectibles - len(self.world.collectibles)
 
         self.game_state.update_collectibles_status(nb_collected)
 

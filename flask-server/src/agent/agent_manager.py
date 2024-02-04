@@ -25,12 +25,12 @@ class DQNAgentManager:
             self.agent.buffer.add(experience)
         self.agent.update_policy()
 
-    def update_experience_replay(self, experiences: list, episode_failed: bool):
-        if episode_failed == True:
-            if self.nb_failed_ep_count/self.nb_suceeded_ep_count <= self.target_prop:
+    def update_experience_replay(self, experiences: list, episode_failed: bool, force_update: bool = False):
+        if episode_failed:
+            if self.nb_failed_ep_count/self.nb_suceeded_ep_count <= self.target_prop or force_update:
                 self.nb_failed_ep_count += 1
                 self.update_queue.put(experiences)
         else:  # success
-            if self.nb_failed_ep_count/self.nb_suceeded_ep_count >= self.target_prop:
+            if self.nb_failed_ep_count/self.nb_suceeded_ep_count >= self.target_prop or force_update:
                 self.nb_suceeded_ep_count += 1
                 self.update_queue.put(experiences)

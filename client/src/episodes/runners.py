@@ -1,9 +1,9 @@
+import sys
 import pygame
 import multiprocessing
-from utils.timer import Timer
 from pygame_module.game_display import GameDisplay
 from episodes.episode_manager import EpisodeManager
-from api.requests import end_training, start_training
+from api.requests import end_training, save_model, start_training
 from utils.common import distribute_episodes, generate_datetime_string
 
 
@@ -18,15 +18,20 @@ def run_multicore_training(num_used_cores: int, num_episodes: int):
             num_episodes, num_used_cores)
         processes = []
 
-        for process_index in range(num_used_cores):
-            num_eps = episode_distribution[process_index]
-            p = multiprocessing.Process(
-                target=run_training_client, args=(process_index, num_eps))
-            p.start()
-            processes.append(p)
+        try:
+            for process_index in range(num_used_cores):
+                num_eps = episode_distribution[process_index]
+                p = multiprocessing.Process(
+                    target=run_training_client, args=(process_index, num_eps))
+                p.start()
+                processes.append(p)
 
-        for p in processes:
-            p.join()
+            for p in processes:
+                p.join()
+        except KeyboardInterrupt:
+            end_training()
+            save_model(modelname)
+            sys.exit()
 
         end_training()
 

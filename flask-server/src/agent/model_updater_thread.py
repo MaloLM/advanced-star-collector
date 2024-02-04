@@ -27,7 +27,8 @@ class ModelUpdaterThread:
                         self.is_running = False
                         break
 
-            self.agent_manager.agent.save_model()
+            self.agent_manager.agent.save_model(
+                self.agent_manager.agent.modelname)
 
         self.thread = Thread(target=run, daemon=True)
         self.thread.start()

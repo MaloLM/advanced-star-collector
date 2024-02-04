@@ -256,8 +256,8 @@ class World:
             if not self.is_within_surface(head_pos):
                 head.is_within_surface = False
                 head_detection.append(0)
-                head_distance_to_a_collectible.append(
-                    radius * 4)
+                # previously radius * 4
+                head_distance_to_a_collectible.append(radius * 2)
             else:
                 head.is_within_surface = True
 
@@ -284,6 +284,7 @@ class World:
                     head_distance_to_a_collectible.append(
                         distance_to_collectible)
 
+        # print(head_detection, head_distance_to_a_collectible, "\n")
         return head_detection, head_distance_to_a_collectible
 
     @staticmethod
@@ -332,7 +333,7 @@ class World:
                 nearest_collectible = item
                 nearest_intersection_point = intersection_point
 
-        return (nearest_collectible, min_distance, nearest_intersection_point) if nearest_collectible else (None, self.surface.shape.radius * 4, None)
+        return (nearest_collectible, min_distance, nearest_intersection_point) if nearest_collectible else (None, self.surface.shape.radius * 2, None)
 
     def _line_circle_intersection(self, starting_point, ending_point, collectible_pos, collectible_radius):
         dx = ending_point[0] - starting_point[0]

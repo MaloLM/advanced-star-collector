@@ -49,13 +49,16 @@ def flatten_list(list_to_flatten):
             list structure are converted to floats. This flat list is 
             suitable for use in ML models that require flat input features.
     """
+    def recursive_flatten(input_list, output_list):
+        for item in input_list:
+            if isinstance(item, list):
+                recursive_flatten(item, output_list)
+            else:
+                output_list.append(float(item))
+
     flattened_state = []
-    for item in list_to_flatten:
-        if isinstance(item, list):
-            flattened_state.extend(item)
-        else:
-            flattened_state.append(item)
-    return [float(i) for i in flattened_state]
+    recursive_flatten(list_to_flatten, flattened_state)
+    return flattened_state
 
 
 @staticmethod
