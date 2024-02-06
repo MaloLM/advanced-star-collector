@@ -81,6 +81,5 @@ class GameState:
             normd_head_detection,  # directionnal sensing
             normd_head_distances_to_collectible  # normalized direction sensing distances
         ]
-        print(prepared_state)
 
         return prepared_state

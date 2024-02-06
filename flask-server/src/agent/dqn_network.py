@@ -28,27 +28,27 @@ class DQNNetwork(tf.keras.Model):
         self.normalization_layer = tf.keras.layers.BatchNormalization()
 
         self.dense1 = tf.keras.layers.Dense(
-            32, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.01))
-        self.dropout1 = tf.keras.layers.Dropout(0.2)
+            128, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.01))
+        self.dropout1 = tf.keras.layers.Dropout(0.3)
 
-        self.dense3 = tf.keras.layers.Dense(
-            64, activation='elu', kernel_regularizer=tf.keras.regularizers.l2(0.007))
-        self.dropout3 = tf.keras.layers.Dropout(0.2)
+        # self.dense3 = tf.keras.layers.Dense(
+        #     64, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.007))
+        # self.dropout3 = tf.keras.layers.Dropout(0.3)
 
         self.dense4 = tf.keras.layers.Dense(
-            128, activation='elu', kernel_regularizer=tf.keras.regularizers.l2(0.005))
-        self.dropout4 = tf.keras.layers.Dropout(0.2)
+            256, activation='elu', kernel_regularizer=tf.keras.regularizers.l2(0.005))
+        self.dropout4 = tf.keras.layers.Dropout(0.3)
 
         self.dense5 = tf.keras.layers.Dense(
-            64, activation='elu', kernel_regularizer=tf.keras.regularizers.l2(0.003))
-        self.dropout5 = tf.keras.layers.Dropout(0.2)
+            128, activation='elu', kernel_regularizer=tf.keras.regularizers.l2(0.003))
+        self.dropout5 = tf.keras.layers.Dropout(0.3)
 
         self.dense6 = tf.keras.layers.Dense(
-            32, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.003))
-        self.dropout6 = tf.keras.layers.Dropout(0.2)
+            64, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.003))
+        self.dropout6 = tf.keras.layers.Dropout(0.3)
 
         self.dense7 = tf.keras.layers.Dense(
-            16, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.001))
+            32, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.001))
 
         self.output_layer = tf.keras.layers.Dense(
             action_size, activation='linear')
@@ -72,8 +72,8 @@ class DQNNetwork(tf.keras.Model):
         x = self.dense1(x)
         x = self.dropout1(x)
 
-        x = self.dense3(x)
-        x = self.dropout3(x)
+        # x = self.dense3(x)
+        # x = self.dropout3(x)
 
         x = self.dense4(x)
         x = self.dropout4(x)

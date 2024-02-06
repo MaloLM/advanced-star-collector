@@ -92,7 +92,8 @@ class Episode:
 
         self.game_state.next_states = self.game_state.evaluate_next_states()
 
-        nb_collected = self.game_state.num_collectibles - len(self.world.collectibles)
+        nb_collected = self.game_state.num_collectibles - \
+            len(self.world.collectibles)
 
         self.game_state.update_collectibles_status(nb_collected)
 
@@ -103,6 +104,11 @@ class Episode:
         is_exit_door_found = self.game_state.current_state == ON_EXIT_DOOR
 
         return is_out_of_bounds or is_exit_door_found
+
+    def is_game_over(self) -> bool:
+
+        return self.game_state.current_state in [
+            ON_EXIT_DOOR, OUT_OF_BOUNDS]
 
     def step(self, action: int) -> tuple[tuple[list, list], float, bool]:
 

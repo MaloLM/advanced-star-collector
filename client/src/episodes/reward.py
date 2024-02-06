@@ -15,7 +15,7 @@ def get_step_reward(step_number: int, agent_situation: int, nb_collected: int, n
         nb_collectibles + 0.01  # hardcore compensation to avoid collect_factor to be 0
 
     if agent_situation == OUT_OF_BOUNDS:
-        reward = - exit_reward(collect_factor)
+        reward = - exit_reward(collect_factor) - 100
         # possible effet pervert: ca faut le coup de sortir du jeu si pas d'étoiles et etre au bord
 
     if agent_situation == ONTO_SURFACE:

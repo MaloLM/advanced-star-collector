@@ -70,9 +70,7 @@ class DQNAgent:
         return action
 
     def choose_action_for_training(self, state: list, epsilon: float) -> int:
-
         flattened_state = flatten_list(state)
-        print(flattened_state)
 
         if random.random() < epsilon:
             return random.randint(0, self.action_size - 1)

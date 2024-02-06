@@ -279,12 +279,13 @@ class World:
                     head_distance_to_a_collectible.append(
                         distance_to_collectible)
                 else:
+                    dist = distance(
+                        head_pos, head.intersection_with_circle_pos)
                     head_detection.append(0)
                     head.sensing_color = PALE_GRAY
                     head_distance_to_a_collectible.append(
-                        distance_to_collectible)
+                        dist)
 
-        # print(head_detection, head_distance_to_a_collectible, "\n")
         return head_detection, head_distance_to_a_collectible
 
     @staticmethod
