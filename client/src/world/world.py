@@ -257,7 +257,7 @@ class World:
                 head.is_within_surface = False
                 head_detection.append(0)
                 # previously radius * 4
-                head_distance_to_a_collectible.append(radius * 2)
+                head_distance_to_a_collectible.append(radius * 4)
             else:
                 head.is_within_surface = True
 
@@ -279,12 +279,9 @@ class World:
                     head_distance_to_a_collectible.append(
                         distance_to_collectible)
                 else:
-                    dist = distance(
-                        head_pos, head.intersection_with_circle_pos)
                     head_detection.append(0)
                     head.sensing_color = PALE_GRAY
-                    head_distance_to_a_collectible.append(
-                        dist)
+                    head_distance_to_a_collectible.append(radius * 4)
 
         return head_detection, head_distance_to_a_collectible
 

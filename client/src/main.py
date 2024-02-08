@@ -9,7 +9,7 @@ def main():
     timer = Timer(start_now=True)
 
     num_used_cores = 5
-    num_episode = 30000
+    num_episode = 20000
 
     # run_random(num_eps=200)
 

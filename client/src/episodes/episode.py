@@ -68,7 +68,7 @@ class Episode:
             self.interface_update_callback()
             self.log_ml_metrics()
 
-            if self.step_index >= 600:
+            if self.step_index >= 1000:
                 done = True
 
         if self.mode == TRAINING:
@@ -98,12 +98,6 @@ class Episode:
         self.game_state.update_collectibles_status(nb_collected)
 
         return self.game_state.get_state()
-
-    def is_game_over(self) -> bool:
-        is_out_of_bounds = self.game_state.current_state == OUT_OF_BOUNDS
-        is_exit_door_found = self.game_state.current_state == ON_EXIT_DOOR
-
-        return is_out_of_bounds or is_exit_door_found
 
     def is_game_over(self) -> bool:
 

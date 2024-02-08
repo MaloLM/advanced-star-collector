@@ -11,8 +11,7 @@ def get_step_reward(step_number: int, agent_situation: int, nb_collected: int, n
 
     reward = 0
 
-    collect_factor = nb_collected / \
-        nb_collectibles + 0.01  # hardcore compensation to avoid collect_factor to be 0
+    collect_factor = nb_collected / nb_collectibles
 
     if agent_situation == OUT_OF_BOUNDS:
         reward = - exit_reward(collect_factor) - 100
@@ -20,7 +19,9 @@ def get_step_reward(step_number: int, agent_situation: int, nb_collected: int, n
 
     if agent_situation == ONTO_SURFACE:
         # Very small reward when progressing in the surface without finding anything
-        reward += 0.1
+        reward += 10
+        reward = attenuate_reward(
+            step_number, reward)
 
     if agent_situation == STAR_COLLECTED:
         reward = 100
@@ -44,6 +45,6 @@ def attenuate_reward(step: int, reward: float):
 
 @staticmethod
 def exit_reward(star_proportion: float):
-    x = star_proportion - 0.02
+    x = star_proportion - 0.01
 
     return (1/((1-x)**2))-1
